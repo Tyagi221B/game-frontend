@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type { NakamaService, LeaderboardEntry } from "../types/nakama";
 import type { GameState } from "../types/game";
 
@@ -13,19 +13,7 @@ export default function Leaderboard({ nakamaService, currentUserId, gameState }:
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  useEffect(() => {
-    fetchLeaderboard();
-  }, []);
-
-  // Refresh leaderboard when game ends
-  useEffect(() => {
-    if (gameState?.status === "completed") {
-      console.log("[Leaderboard] Game completed, refreshing...");
-      setTimeout(() => fetchLeaderboard(), 1000); // Small delay to let server update
-    }
-  }, [gameState?.status]);
-
-  const fetchLeaderboard = async () => {
+  const fetchLeaderboard = useCallback(async () => {
     try {
       setLoading(true);
       const result = await nakamaService.getLeaderboard();
@@ -36,7 +24,19 @@ export default function Leaderboard({ nakamaService, currentUserId, gameState }:
     } finally {
       setLoading(false);
     }
-  };
+  }, [nakamaService]);
+
+  useEffect(() => {
+    fetchLeaderboard();
+  }, [fetchLeaderboard]);
+
+  // Refresh leaderboard when game ends
+  useEffect(() => {
+    if (gameState?.status === "completed") {
+      console.log("[Leaderboard] Game completed, refreshing...");
+      setTimeout(() => fetchLeaderboard(), 1000); // Small delay to let server update
+    }
+  }, [gameState?.status, fetchLeaderboard]);
 
   // Mobile collapsed view - just a toggle button (desktop ignores this)
   const showCollapsed = !isExpanded;
