@@ -1,13 +1,17 @@
 // App.tsx - Main application component with state management
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Login from "./components/Login";
 import Matchmaking from "./components/Matchmaking";
 import GameBoard from "./components/GameBoard";
 import GameStatus from "./components/GameStatus";
 import Leaderboard from "./components/Leaderboard";
+import ConnectionStatus from "./components/ConnectionStatus";
+import ToastContainer from "./components/ToastContainer";
 import { nakamaService } from "./services/nakama";
 import type { GameState } from "./types/game";
+import type { ConnectionStatus as ConnectionStatusType } from "./types/nakama";
+import type { ToastProps, ToastType } from "./components/Toast";
 
 // Screen types
 type Screen = "login" | "matchmaking" | "game";
@@ -18,7 +22,48 @@ function App() {
   const [username, setUsername] = useState("");
   const [userId, setUserId] = useState("");
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const [error, setError] = useState("");
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatusType>("disconnected");
+  const [toasts, setToasts] = useState<Omit<ToastProps, "onDismiss">[]>([]);
+
+  // Toast management
+  const showToast = useCallback((type: ToastType, message: string, duration = 5000) => {
+    const id = Math.random().toString(36).substring(7);
+    setToasts((prev) => [...prev, { id, type, message, duration }]);
+  }, []);
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  }, []);
+
+  // Check for existing authentication on mount
+  useEffect(() => {
+    const checkExistingAuth = async () => {
+      if (nakamaService.hasStoredIdentity()) {
+        const storedUsername = nakamaService.getStoredUsername();
+
+        if (storedUsername) {
+          console.log("📍 Found existing identity, re-authenticating as:", storedUsername);
+
+          // Re-authenticate with stored credentials
+          const authenticated = await nakamaService.authenticate(storedUsername);
+          if (authenticated) {
+            const connected = await nakamaService.connectSocket();
+            if (connected) {
+              setUsername(storedUsername);
+              const userId = nakamaService.getUserId();
+              if (userId) {
+                setUserId(userId);
+                setCurrentScreen("matchmaking");
+                console.log("✅ Auto-logged in as:", storedUsername);
+              }
+            }
+          }
+        }
+      }
+    };
+
+    checkExistingAuth();
+  }, []);
 
   // Initialize Nakama event handlers on mount
   useEffect(() => {
@@ -42,31 +87,34 @@ function App() {
     // Handle errors
     nakamaService.onError = (errorMessage: string) => {
       console.error("❌ Error:", errorMessage);
-      setError(errorMessage);
+      showToast("error", errorMessage);
+    };
+
+    // Handle connection status changes
+    nakamaService.onConnectionStatusChange = (status: ConnectionStatusType) => {
+      console.log("🔌 Connection status:", status);
+      setConnectionStatus(status);
     };
 
     // Cleanup only on component unmount
     return () => {
       nakamaService.disconnect();
     };
-  }, []); // Run only once on mount
+  }, [showToast]); // Run only once on mount
 
   // Step 1: Handle login
   const handleLogin = async (nickname: string) => {
-    setError("");
     setUsername(nickname);
 
     // Authenticate with Nakama
     const authenticated = await nakamaService.authenticate(nickname);
     if (!authenticated) {
-      setError("Failed to authenticate. Please try again.");
       return;
     }
 
     // Connect WebSocket
     const connected = await nakamaService.connectSocket();
     if (!connected) {
-      setError("Failed to connect to server. Please try again.");
       return;
     }
 
@@ -75,18 +123,14 @@ function App() {
     if (id) {
       setUserId(id);
       setCurrentScreen("matchmaking");
+      showToast("success", `Welcome, ${nickname}!`);
     }
   };
 
   // Step 2: Handle matchmaking
   const handleFindMatch = async () => {
-    setError("");
-
     // Find/create a match
-    const matchFound = await nakamaService.findMatch();
-    if (!matchFound) {
-      setError("Failed to find match. Please try again.");
-    }
+    await nakamaService.findMatch();
   };
 
   // Step 3: Handle cell click in game
@@ -106,30 +150,25 @@ function App() {
     await handleFindMatch();
   };
 
+  // Step 5: Handle logout
+  const handleLogout = () => {
+    // Clear everything
+    nakamaService.logout();
+    setUsername("");
+    setUserId("");
+    setGameState(null);
+    setCurrentScreen("login");
+    console.log("✅ Logged out successfully");
+  };
+
   // Render current screen
   return (
     <div className="min-h-screen">
-      {/* Error Toast */}
-      {error && (
-        <div className="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slide-in">
-          <div className="flex items-center gap-2">
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span>{error}</span>
-          </div>
-        </div>
-      )}
+      {/* Connection Status Indicator */}
+      <ConnectionStatus status={connectionStatus} />
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
       {/* Login Screen */}
       {currentScreen === "login" && <Login onLogin={handleLogin} />}
@@ -139,6 +178,7 @@ function App() {
         <Matchmaking
           username={username}
           onFindMatch={handleFindMatch}
+          onLogout={handleLogout}
         />
       )}
 
