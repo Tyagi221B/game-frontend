@@ -5,7 +5,7 @@ import { Client, Session } from "@heroiclabs/nakama-js";
 import type { Socket } from "@heroiclabs/nakama-js";
 import type { GameState } from "../types/game";
 import { OpCode } from "../types/game";
-import type { NakamaService as INakamaService, LeaderboardEntry } from "../types/nakama";
+import type { NakamaService as INakamaService, LeaderboardEntry, ConnectionStatus } from "../types/nakama";
 
 // Nakama connection configuration
 const SERVER_HOST = "localhost"; // Change to production URL when deploying
@@ -17,11 +17,16 @@ class NakamaService implements INakamaService {
   private session: Session | null = null;
   private socket: Socket | null = null;
   private matchId: string | null = null;
+  private connectionStatus: ConnectionStatus = "disconnected";
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 10;
+  private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 
   // Callback functions for React components to handle events
-  public onMatchStateUpdate: ((state: GameState) => void) | null = null;
-  public onMatchJoined: (() => void) | null = null;
-  public onError: ((error: string) => void) | null = null;
+  public onMatchStateUpdate?: (state: GameState) => void;
+  public onMatchJoined?: () => void;
+  public onError?: (message: string) => void;
+  public onConnectionStatusChange?: (status: ConnectionStatus) => void;
 
   constructor() {
     // Initialize Nakama client
@@ -38,6 +43,9 @@ class NakamaService implements INakamaService {
       const deviceId = this.getOrCreateDeviceId();
 
       this.session = await this.client.authenticateDevice(deviceId, true, nickname);
+
+      // Store username in localStorage for session persistence
+      localStorage.setItem("nakama_username", this.session.username || nickname);
 
       console.log("[Auth] Authenticated as:", this.session.username);
       return true;
@@ -56,25 +64,72 @@ class NakamaService implements INakamaService {
     }
 
     try {
+      this.setConnectionStatus("connecting");
+
       // Create WebSocket connection
       this.socket = this.client.createSocket(USE_SSL, false);
 
       // Set up event listeners BEFORE connecting
       this.socket.onmatchdata = this.handleMatchData.bind(this);
-      this.socket.ondisconnect = () => {
-        console.log("[Socket] Disconnected from server");
+      this.socket.ondisconnect = (evt) => {
+        console.log("[Socket] Disconnected from server", evt);
+        this.setConnectionStatus("disconnected");
+
+        // Auto-reconnect if we have a session
+        if (this.session && this.reconnectAttempts < this.maxReconnectAttempts) {
+          this.attemptReconnect();
+        }
       };
 
       // Connect to Nakama server
       await this.socket.connect(this.session, true);
       console.log("[Socket] WebSocket connected!");
+      this.setConnectionStatus("connected");
+      this.reconnectAttempts = 0; // Reset on successful connection
 
       return true;
     } catch (error) {
       console.error("[Socket] Connection failed:", error);
+      this.setConnectionStatus("disconnected");
       this.onError?.("Failed to connect to server. Please try again.");
       return false;
     }
+  }
+
+  // Attempt to reconnect with exponential backoff
+  private attemptReconnect(): void {
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+    }
+
+    this.reconnectAttempts++;
+    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 30000); // Max 30s
+
+    console.log(`[Socket] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+    this.setConnectionStatus("reconnecting");
+
+    this.reconnectTimeout = setTimeout(async () => {
+      console.log(`[Socket] Attempting reconnect #${this.reconnectAttempts}...`);
+      const success = await this.connectSocket();
+
+      if (!success && this.reconnectAttempts >= this.maxReconnectAttempts) {
+        this.onError?.("Lost connection to server. Please refresh the page.");
+      }
+    }, delay);
+  }
+
+  // Set connection status and notify listeners
+  private setConnectionStatus(status: ConnectionStatus): void {
+    if (this.connectionStatus !== status) {
+      this.connectionStatus = status;
+      console.log(`[Connection] Status: ${status}`);
+      this.onConnectionStatusChange?.(status);
+    }
+  }
+
+  // Get current connection status
+  getConnectionStatus(): ConnectionStatus {
+    return this.connectionStatus;
   }
 
   // Step 3: Find a match using RPC
@@ -254,6 +309,34 @@ class NakamaService implements INakamaService {
     this.session = null;
     this.matchId = null;
     console.log("[Nakama] Disconnected");
+  }
+
+  // Logout - Clear device ID and full disconnect
+  logout(): void {
+    // Disconnect first
+    this.disconnect();
+
+    // Clear device ID and username from localStorage
+    const DEVICE_ID_KEY = "nakama_device_id";
+    localStorage.removeItem(DEVICE_ID_KEY);
+    localStorage.removeItem("nakama_username");
+    console.log("[Nakama] Logged out - device ID and username cleared");
+  }
+
+  // Check if user is already authenticated
+  isAuthenticated(): boolean {
+    return this.session !== null && this.socket !== null;
+  }
+
+  // Check if device ID exists (user has logged in before)
+  hasStoredIdentity(): boolean {
+    const DEVICE_ID_KEY = "nakama_device_id";
+    return localStorage.getItem(DEVICE_ID_KEY) !== null;
+  }
+
+  // Get stored username from localStorage
+  getStoredUsername(): string | null {
+    return localStorage.getItem("nakama_username");
   }
 }
 

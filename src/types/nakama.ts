@@ -1,6 +1,8 @@
 // Type definitions for Nakama service
 import type { GameState } from "./game";
 
+export type ConnectionStatus = "disconnected" | "connecting" | "connected" | "reconnecting";
+
 export interface LeaderboardEntry {
   rank: number;
   username: string;
@@ -10,10 +12,14 @@ export interface LeaderboardEntry {
 
 export interface NakamaService {
   // Authentication
-  authenticate(deviceId: string, username: string): Promise<void>;
+  authenticate(nickname: string): Promise<boolean>;
+  logout(): void;
+  isAuthenticated(): boolean;
+  hasStoredIdentity(): boolean;
+  getStoredUsername(): string | null;
 
   // Socket connection
-  connectSocket(): Promise<void>;
+  connectSocket(): Promise<boolean>;
   disconnect(): void;
 
   // Matchmaking
@@ -29,6 +35,7 @@ export interface NakamaService {
   // User info
   getUserId(): string | null;
   getUsername(): string | null;
+  getConnectionStatus(): ConnectionStatus;
 
   // Callbacks
   onAuthenticated?: () => void;
@@ -36,4 +43,5 @@ export interface NakamaService {
   onMatchJoined?: () => void;
   onMatchStateUpdate?: (state: GameState) => void;
   onError?: (message: string) => void;
+  onConnectionStatusChange?: (status: ConnectionStatus) => void;
 }
