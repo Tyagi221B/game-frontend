@@ -5,9 +5,10 @@ import { useState } from "react";
 interface MatchmakingProps {
   username: string;
   onFindMatch: () => void;
+  onLogout: () => void;
 }
 
-export default function Matchmaking({ username, onFindMatch }: MatchmakingProps) {
+export default function Matchmaking({ username, onFindMatch, onLogout }: MatchmakingProps) {
   const [isSearching, setIsSearching] = useState(false);
 
   const handleFindMatch = () => {
@@ -27,6 +28,17 @@ export default function Matchmaking({ username, onFindMatch }: MatchmakingProps)
       <div className="relative bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-10 w-full max-w-lg">
         {!isSearching ? (
           <>
+            {/* Logout Button - Top Right */}
+            <button
+              onClick={onLogout}
+              className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors p-2 hover:bg-red-50 rounded-lg"
+              title="Logout and clear identity"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
+
             {/* Welcome Header */}
             <div className="text-center mb-8">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-br from-indigo-500 to-purple-600 rounded-full mb-4 shadow-lg">
