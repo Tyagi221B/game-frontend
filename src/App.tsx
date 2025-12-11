@@ -5,6 +5,7 @@ import Login from "./components/Login";
 import Matchmaking from "./components/Matchmaking";
 import GameBoard from "./components/GameBoard";
 import GameStatus from "./components/GameStatus";
+import Leaderboard from "./components/Leaderboard";
 import { nakamaService } from "./services/nakama";
 import type { GameState } from "./types/game";
 
@@ -135,7 +136,10 @@ function App() {
 
       {/* Matchmaking Screen */}
       {currentScreen === "matchmaking" && (
-        <Matchmaking username={username} onFindMatch={handleFindMatch} />
+        <Matchmaking
+          username={username}
+          onFindMatch={handleFindMatch}
+        />
       )}
 
       {/* Game Screen */}
@@ -162,6 +166,17 @@ function App() {
               onPlayAgain={handlePlayAgain}
             />
           </div>
+        </div>
+      )}
+
+      {/* Fixed Leaderboard - Top Right (hide on login) */}
+      {currentScreen !== "login" && (
+        <div className="fixed top-4 right-4 w-56 sm:w-72 lg:w-80 max-h-[40vh] sm:max-h-[calc(100vh-2rem)] overflow-y-auto z-50">
+          <Leaderboard
+            nakamaService={nakamaService}
+            currentUserId={nakamaService.getUserId() || undefined}
+            gameState={gameState}
+          />
         </div>
       )}
     </div>

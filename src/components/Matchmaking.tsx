@@ -41,7 +41,7 @@ export default function Matchmaking({ username, onFindMatch }: MatchmakingProps)
             {/* Quick Match Button */}
             <button
               onClick={handleFindMatch}
-              className="w-full bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-6 px-8 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] mb-6"
+              className="w-full bg-indigo-600 text-white font-bold py-6 px-8 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] hover:bg-indigo-700 active:scale-[0.98] mb-6"
             >
               <div className="flex items-center justify-center gap-3">
                 <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
