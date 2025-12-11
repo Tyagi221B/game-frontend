@@ -5,13 +5,14 @@ import { Client, Session } from "@heroiclabs/nakama-js";
 import type { Socket } from "@heroiclabs/nakama-js";
 import type { GameState } from "../types/game";
 import { OpCode } from "../types/game";
+import type { NakamaService as INakamaService, LeaderboardEntry } from "../types/nakama";
 
 // Nakama connection configuration
 const SERVER_HOST = "localhost"; // Change to production URL when deploying
 const SERVER_PORT = "7350"; // Nakama HTTP + WebSocket port
 const USE_SSL = false; // Set to true in production
 
-class NakamaService {
+class NakamaService implements INakamaService {
   private client: Client;
   private session: Session | null = null;
   private socket: Socket | null = null;
@@ -159,6 +160,26 @@ class NakamaService {
     } catch (error) {
       console.error("[Game] Failed to send move:", error);
       this.onError?.("Failed to send move. Please try again.");
+    }
+  }
+
+  // Fetch leaderboard
+  async getLeaderboard(): Promise<LeaderboardEntry[]> {
+    if (!this.socket) {
+      console.error("[Leaderboard] Socket not connected!");
+      return [];
+    }
+
+    try {
+      console.log("[Leaderboard] Fetching top players...");
+      const response = await this.socket.rpc("get_leaderboard", "");
+      const result = JSON.parse(response.payload as string);
+
+      console.log("[Leaderboard] Received:", result.leaderboard?.length || 0, "players");
+      return result.leaderboard || [];
+    } catch (error) {
+      console.error("[Leaderboard] Failed to fetch:", error);
+      return [];
     }
   }
 
