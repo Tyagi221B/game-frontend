@@ -317,6 +317,41 @@ class NakamaService implements INakamaService {
     console.log("[Nakama] Disconnected");
   }
 
+  // Delete user data (leaderboard records)
+  async deleteUserData(): Promise<boolean> {
+    if (!this.socket) {
+      console.error("[Delete] Socket not connected!");
+      return false;
+    }
+
+    try {
+      console.log("[Delete] ----------------------------------------");
+      console.log("[Delete] Sending delete_user_data RPC to server...");
+      console.log("[Delete] User ID:", this.getUserId());
+      console.log("[Delete] Username:", this.getUsername());
+
+      const response = await this.socket.rpc("delete_user_data", "");
+      console.log("[Delete] RPC response received");
+
+      const result = JSON.parse(response.payload as string);
+      console.log("[Delete] Response parsed:", result);
+
+      if (!result.success) {
+        console.error("[Delete] ✗ Server reported failure:", result.error);
+        console.log("[Delete] ----------------------------------------");
+        return false;
+      }
+
+      console.log("[Delete] ✓ Server confirmed successful deletion");
+      console.log("[Delete] ----------------------------------------");
+      return true;
+    } catch (error: unknown) {
+      console.error("[Delete] ✗ Exception during deletion:", error);
+      console.log("[Delete] ----------------------------------------");
+      return false;
+    }
+  }
+
   // Logout - Clear device ID and full disconnect
   logout(): void {
     // Disconnect first

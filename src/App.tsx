@@ -153,14 +153,56 @@ function App() {
   };
 
   // Step 5: Handle logout
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    console.log("========================================");
+    console.log("🚪 [LOGOUT] Starting logout process...");
+    console.log("🚪 [LOGOUT] Current user:", username, "| User ID:", userId);
+
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      "Are you sure you want to logout?\n\n" +
+      "⚠️ You will lose:\n" +
+      "• All your scores and progress\n" +
+      "• Your username (it will become available for others)\n" +
+      "• All leaderboard data\n\n" +
+      "This action cannot be undone!"
+    );
+
+    if (!confirmed) {
+      console.log("❌ [LOGOUT] Logout cancelled by user");
+      console.log("========================================");
+      return;
+    }
+
+    console.log("✓ [LOGOUT] User confirmed logout");
+
+    // Delete user data from server
+    console.log("🗑️ [LOGOUT] Calling server to delete user data...");
+    const deleted = await nakamaService.deleteUserData();
+
+    if (!deleted) {
+      console.error("✗ [LOGOUT] Failed to delete user data from server");
+      console.log("========================================");
+      showToast("error", "Failed to delete user data. Please try again.");
+      return;
+    }
+
+    console.log("✓ [LOGOUT] User data deleted from server successfully");
+    console.log("🗑️ [LOGOUT] Clearing localStorage...");
+
     // Clear everything
     nakamaService.logout();
     setUsername("");
     setUserId("");
     setGameState(null);
     setCurrentScreen("login");
-    console.log("✅ Logged out successfully");
+
+    console.log("✓ [LOGOUT] localStorage cleared");
+    console.log("✓ [LOGOUT] State reset to login screen");
+    console.log("✅ [LOGOUT] Logout completed successfully!");
+    console.log("========================================");
+
+    showToast("success", "Logged out successfully. All data deleted.");
   };
 
   // Render current screen
