@@ -90,6 +90,10 @@ class NakamaService implements INakamaService {
       // Connect to Nakama server
       await this.socket.connect(this.session, true);
       console.log("[Socket] WebSocket connected!");
+
+      // Small delay to ensure socket is fully ready for RPC calls
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       this.setConnectionStatus("connected");
       this.reconnectAttempts = 0; // Reset on successful connection
 

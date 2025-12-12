@@ -55,18 +55,18 @@ export default function GameBoard({
         onClick={() => canClick && onCellClick(index)}
         disabled={!canClick}
         className={`
-          w-full aspect-square bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg
-          flex items-center justify-center text-7xl font-black
-          transition-all duration-200 border-4
-          ${canClick ? "hover:bg-indigo-50 hover:shadow-2xl cursor-pointer hover:scale-105 hover:-translate-y-1 border-indigo-200 hover:border-indigo-400" : "cursor-not-allowed border-gray-200"}
-          ${!isEmpty ? "bg-linear-to-br from-white to-gray-50" : ""}
+          w-full aspect-square bg-black
+          flex items-center justify-center text-8xl font-black
+          transition-all duration-300
+          ${canClick ? "hover:bg-red-500/10 cursor-pointer" : "cursor-not-allowed"}
+          ${!isEmpty ? "" : ""}
         `}
       >
         {value === "X" && (
-          <span className="text-transparent bg-clip-text bg-linear-to-br from-indigo-600 to-purple-600 drop-shadow-lg">X</span>
+          <span className="text-[#E50914] drop-shadow-[0_0_20px_rgba(229,9,20,0.6)] animate-fade-in">X</span>
         )}
         {value === "O" && (
-          <span className="text-transparent bg-clip-text bg-linear-to-br from-pink-600 to-rose-600 drop-shadow-lg">O</span>
+          <span className="text-[#0080FF] drop-shadow-[0_0_20px_rgba(0,128,255,0.6)] animate-fade-in">O</span>
         )}
       </button>
     );
@@ -75,105 +75,107 @@ export default function GameBoard({
   return (
     <div className="w-full max-w-2xl mx-auto">
       {/* Players Info Bar */}
-      <div className="mb-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6 border-2 border-white/50">
+      <div className="mb-8 bg-black/60 backdrop-blur-xl rounded-2xl shadow-xl shadow-orange-500/20 p-6 border border-orange-500/20">
         <div className="flex items-center justify-between gap-4">
           {/* You */}
           <div className={`flex items-center gap-3 flex-1 transition-all duration-300 ${isMyTurn ? 'scale-105' : 'opacity-70'}`}>
-            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl shadow-lg ${mySymbol === "X" ? "bg-linear-to-br from-indigo-500 to-purple-600 text-white" : "bg-linear-to-br from-pink-500 to-rose-600 text-white"}`}>
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl shadow-lg ${mySymbol === "X" ? "bg-[#E50914]/20 border-2 border-[#E50914] text-[#E50914] shadow-[#E50914]/50" : "bg-[#0080FF]/20 border-2 border-[#0080FF] text-[#0080FF] shadow-[#0080FF]/50"}`}>
               {mySymbol}
             </div>
             <div className="flex-1">
-              <div className="text-sm font-semibold text-gray-500 uppercase tracking-wide">You</div>
-              <div className="text-xl font-black text-gray-800 truncate">{gameState.players[currentUserId]?.username}</div>
-            </div>
-            {isMyTurn && gameActive && (
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 px-3 py-1 bg-green-100 rounded-full">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-xs font-bold text-green-700">YOUR TURN</span>
-                </div>
-                <div className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all duration-300 ${
+              <div className="flex items-center gap-2 mb-1">
+                <div className="text-sm font-semibold text-neutral-400 uppercase tracking-wide">You</div>
+                {isMyTurn && gameActive && (
+                  <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/20 rounded-full border border-emerald-500/50">
+                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <span className="text-[10px] font-bold text-emerald-400">YOUR TURN</span>
+                  </div>
+                )}
+              </div>
+              <div className="text-xl font-black text-white truncate mb-1 capitalize">{gameState.players[currentUserId]?.username}</div>
+              {isMyTurn && gameActive && (
+                <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md transition-all duration-300 ${
                   timeRemaining <= 10
-                    ? 'bg-red-100 border border-red-300 animate-pulse'
-                    : 'bg-blue-50 border border-blue-200'
+                    ? 'bg-red-500/20 border border-red-500/50 animate-pulse'
+                    : 'bg-blue-500/20 border border-blue-500/50'
                 }`}>
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span className={`font-black text-sm ${
-                    timeRemaining <= 10 ? 'text-red-700' : 'text-blue-700'
+                  <span className={`font-black text-xs ${
+                    timeRemaining <= 10 ? 'text-red-400' : 'text-blue-400'
                   }`}>
                     {timeRemaining}s
                   </span>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* VS Divider */}
           <div className="px-4">
-            <div className="w-12 h-12 rounded-xl bg-linear-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-              <span className="text-lg font-black text-gray-400">VS</span>
+            <div className="w-12 h-12 rounded-xl bg-orange-500/20 border border-orange-500/30 flex items-center justify-center backdrop-blur-sm">
+              <span className="text-lg font-black text-orange-400">VS</span>
             </div>
           </div>
 
           {/* Opponent */}
           <div className={`flex items-center gap-3 flex-1 justify-end transition-all duration-300 ${!isMyTurn ? 'scale-105' : 'opacity-70'}`}>
-            {!isMyTurn && gameActive && (
-              <div className="flex items-center gap-2">
-                <div className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all duration-300 ${
+            <div className="flex-1 text-right">
+              <div className="flex items-center justify-end gap-2 mb-1">
+                <div className="text-sm font-semibold text-neutral-400 uppercase tracking-wide">Opponent</div>
+                {!isMyTurn && gameActive && (
+                  <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/20 rounded-full border border-amber-500/50">
+                    <span className="text-[10px] font-bold text-amber-400">THINKING</span>
+                    <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></div>
+                  </div>
+                )}
+              </div>
+              <div className="text-xl font-black text-white truncate mb-1 capitalize">{opponent?.username || "Waiting..."}</div>
+              {!isMyTurn && gameActive && (
+                <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md transition-all duration-300 ${
                   timeRemaining <= 10
-                    ? 'bg-red-100 border border-red-300 animate-pulse'
-                    : 'bg-blue-50 border border-blue-200'
+                    ? 'bg-red-500/20 border border-red-500/50 animate-pulse'
+                    : 'bg-blue-500/20 border border-blue-500/50'
                 }`}>
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span className={`font-black text-sm ${
-                    timeRemaining <= 10 ? 'text-red-700' : 'text-blue-700'
+                  <span className={`font-black text-xs ${
+                    timeRemaining <= 10 ? 'text-red-400' : 'text-blue-400'
                   }`}>
                     {timeRemaining}s
                   </span>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1 bg-amber-100 rounded-full">
-                  <span className="text-xs font-bold text-amber-700">THINKING...</span>
-                  <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
-                </div>
-              </div>
-            )}
-            <div className="flex-1 text-right">
-              <div className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Opponent</div>
-              <div className="text-xl font-black text-gray-800 truncate">{opponent?.username || "Waiting..."}</div>
+              )}
             </div>
-            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl shadow-lg ${opponent?.symbol === "X" ? "bg-linear-to-br from-indigo-500 to-purple-600 text-white" : "bg-linear-to-br from-pink-500 to-rose-600 text-white"}`}>
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl shadow-lg ${opponent?.symbol === "X" ? "bg-[#E50914]/20 border-2 border-[#E50914] text-[#E50914] shadow-[#E50914]/50" : opponent?.symbol === "O" ? "bg-[#0080FF]/20 border-2 border-[#0080FF] text-[#0080FF] shadow-[#0080FF]/50" : "bg-neutral-800 border-2 border-neutral-700 text-neutral-500"}`}>
               {opponent?.symbol || "?"}
             </div>
           </div>
         </div>
       </div>
 
-      {/* 3x3 Grid */}
+      {/* 3x3 Grid - Classic Tic-Tac-Toe Lines */}
       <div className="relative">
-        <div className={`grid grid-cols-3 gap-4 p-8 bg-linear-to-br from-indigo-100 via-purple-100 to-pink-100 rounded-3xl shadow-2xl border-4 border-white/50 transition-all duration-300 ${!isMyTurn && gameActive ? 'opacity-60' : 'opacity-100'}`}>
+        <div
+          className={`grid grid-cols-3 p-0 rounded-2xl transition-all duration-500 ${!isMyTurn && gameActive ? 'opacity-70' : 'opacity-100'}`}
+          style={{
+            background: 'black',
+            gap: '2px',
+            backgroundColor: '#404040'
+          }}
+        >
           {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((index) => renderCell(index))}
         </div>
-
-        {/* Disabled Overlay when not your turn */}
-        {!isMyTurn && gameActive && (
-          <div className="absolute inset-0 bg-gray-900/10 rounded-3xl flex items-center justify-center pointer-events-none">
-            <div className="bg-white/90 backdrop-blur-sm px-6 py-3 rounded-2xl shadow-xl border-2 border-gray-200">
-              <p className="text-gray-700 font-bold text-lg">Opponent's Turn</p>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Turn Indicator */}
       <div className="mt-8 text-center">
         {gameActive && (
-          <div className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl shadow-lg bg-white/90 backdrop-blur-sm border-2 border-white/50">
-            <div className={`w-3 h-3 rounded-full ${isMyTurn ? 'bg-green-500 animate-pulse' : 'bg-amber-500 animate-pulse'}`}></div>
-            <span className="text-lg font-bold text-gray-700">
+          <div className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl shadow-lg shadow-orange-500/20 bg-black/60 backdrop-blur-xl border border-orange-500/20">
+            <div className={`w-3 h-3 rounded-full ${isMyTurn ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500 animate-pulse'}`}></div>
+            <span className="text-lg font-bold text-white">
               {isMyTurn ? `Your Turn - Place your ${mySymbol}` : `Waiting for opponent...`}
             </span>
           </div>

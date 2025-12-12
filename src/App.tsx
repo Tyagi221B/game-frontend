@@ -207,7 +207,7 @@ function App() {
 
   // Render current screen
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-black">
       {/* Connection Status Indicator */}
       <ConnectionStatus status={connectionStatus} />
 
@@ -228,11 +228,12 @@ function App() {
 
       {/* Game Screen */}
       {currentScreen === "game" && gameState && (
-        <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-indigo-600 via-purple-600 to-pink-500 py-8 p-4">
-          {/* Animated Background Shapes */}
+        <div className="min-h-screen flex items-center justify-center bg-black py-8 p-4">
+          {/* Animated Orange/Red Glow Blobs */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-20 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
-            <div className="absolute bottom-20 right-10 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse delay-700"></div>
+            <div className="absolute top-20 left-10 w-96 h-96 bg-linear-to-br from-orange-500/30 via-red-500/20 to-transparent rounded-full blur-3xl animate-glow-pulse"></div>
+            <div className="absolute bottom-20 right-10 w-125 h-125 bg-linear-to-tl from-red-600/30 via-orange-600/20 to-transparent rounded-full blur-3xl animate-glow-pulse-delayed"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-150 bg-linear-to-r from-orange-500/10 to-red-500/10 rounded-full blur-3xl animate-pulse"></div>
           </div>
 
           <div className="relative w-full max-w-4xl px-4">
@@ -260,6 +261,7 @@ function App() {
             nakamaService={nakamaService}
             currentUserId={nakamaService.getUserId() || undefined}
             gameState={gameState}
+            connectionStatus={connectionStatus}
           />
         </div>
       )}

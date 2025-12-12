@@ -84,7 +84,7 @@ export default function Toast({ id, type, message, duration = 5000, onDismiss }:
 
   return (
     <div
-      className={`${config.bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 min-w-[300px] max-w-md animate-slide-in`}
+      className={`${config.bgColor} text-white px-6 py-3 rounded-lg shadow-lg border border-white/10 flex items-center gap-3 min-w-75 max-w-md animate-slide-in`}
     >
       <div className="shrink-0">{config.icon}</div>
       <span className="flex-1">{message}</span>

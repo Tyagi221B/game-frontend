@@ -50,7 +50,7 @@ export default function ConnectionStatus({ status }: ConnectionStatusProps) {
 
         {/* Tooltip on Hover */}
         <div className="absolute left-6 top-1/2 -translate-y-1/2 hidden group-hover:block">
-          <div className="bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-xl whitespace-nowrap">
+          <div className="bg-black/90 backdrop-blur-sm text-white text-xs px-3 py-2 rounded-lg shadow-xl shadow-orange-500/20 border border-neutral-800 whitespace-nowrap">
             {config.text}
           </div>
         </div>

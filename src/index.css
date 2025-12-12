@@ -54,6 +54,39 @@
   }
 }
 
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes glow-pulse-delayed {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes border-glow {
+  0%, 100% {
+    border-color: #0080FF;
+    box-shadow: 0 0 20px rgba(0, 128, 255, 0.6), 0 0 40px rgba(0, 128, 255, 0.4);
+  }
+  50% {
+    border-color: #00BFFF;
+    box-shadow: 0 0 30px rgba(0, 191, 255, 0.9), 0 0 60px rgba(0, 191, 255, 0.6);
+  }
+}
+
 .animate-confetti-1 {
   animation: confetti-1 3s ease-out infinite;
 }
@@ -76,6 +109,21 @@
   animation: fade-in 0.3s ease-out;
 }
 
+.animate-glow-pulse {
+  animation: glow-pulse 4s ease-in-out infinite;
+}
+
+.animate-glow-pulse-delayed {
+  animation: glow-pulse-delayed 5s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+/* Premium Button Hover Effect */
+.btn-glow:hover {
+  animation: border-glow 1.5s ease-in-out infinite !important;
+  border-color: #0080FF !important;
+}
+
 .delay-700 {
   animation-delay: 700ms;
 }
@@ -86,9 +134,9 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light;
-  color: #213547;
-  background-color: #ffffff;
+  color-scheme: dark;
+  color: #ffffff;
+  background-color: #000000;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
