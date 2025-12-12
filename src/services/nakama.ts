@@ -49,9 +49,15 @@ class NakamaService implements INakamaService {
 
       console.log("[Auth] Authenticated as:", this.session.username);
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error("[Auth] Authentication failed:", error);
-      this.onError?.("Failed to authenticate. Please try again.");
+
+      // Check if it's a 409 Conflict error (username already taken)
+      if (error?.status === 409) {
+        this.onError?.(`Username "${nickname}" is already taken. Please choose another one.`);
+      } else {
+        this.onError?.("Failed to authenticate. Please try again.");
+      }
       return false;
     }
   }

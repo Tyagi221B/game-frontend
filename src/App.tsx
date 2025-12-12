@@ -109,6 +109,8 @@ function App() {
     // Authenticate with Nakama
     const authenticated = await nakamaService.authenticate(nickname);
     if (!authenticated) {
+      // Username is taken or authentication failed - stay on login screen
+      setUsername("");
       return;
     }
 
