@@ -13,20 +13,23 @@ export default function Login({ onLogin }: LoginProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Normalize username (trim and remove extra whitespace)
+    const normalizedNickname = nickname.trim().replace(/\s+/g, ' ');
+
     // Validation
-    if (nickname.trim().length < 2) {
+    if (normalizedNickname.length < 2) {
       setError("Nickname must be at least 2 characters");
       return;
     }
 
-    if (nickname.trim().length > 20) {
+    if (normalizedNickname.length > 20) {
       setError("Nickname must be less than 20 characters");
       return;
     }
 
     // Clear error and proceed
     setError("");
-    onLogin(nickname.trim());
+    onLogin(normalizedNickname);
   };
 
   return (
