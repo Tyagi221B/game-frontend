@@ -1,5 +1,6 @@
 // components/GameBoard.tsx - 3x3 Tic-Tac-Toe grid
 
+import { useState, useEffect } from "react";
 import type { GameState } from "../types/game";
 
 interface GameBoardProps {
@@ -16,6 +17,25 @@ export default function GameBoard({
   // Check if it's current player's turn
   const isMyTurn = gameState.currentTurn === currentUserId;
   const gameActive = gameState.status === "active";
+
+  // Turn timer countdown - calculate remaining time
+  const [timeRemaining, setTimeRemaining] = useState<number>(30);
+
+  useEffect(() => {
+    if (!gameActive || !gameState.turnStartTimestamp) {
+      return;
+    }
+
+    // Update countdown every 100ms for smooth animation
+    const interval = setInterval(() => {
+      if (gameState.turnStartTimestamp === null) return;
+      const elapsed = Math.floor((Date.now() - gameState.turnStartTimestamp) / 1000);
+      const remaining = Math.max(0, 30 - elapsed);
+      setTimeRemaining(remaining);
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [gameActive, gameState.turnStartTimestamp]);
 
   // Get current player's symbol and opponent
   const mySymbol = gameState.players[currentUserId]?.symbol;
@@ -66,10 +86,26 @@ export default function GameBoard({
               <div className="text-sm font-semibold text-gray-500 uppercase tracking-wide">You</div>
               <div className="text-xl font-black text-gray-800 truncate">{gameState.players[currentUserId]?.username}</div>
             </div>
-            {isMyTurn && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-green-100 rounded-full">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-xs font-bold text-green-700">YOUR TURN</span>
+            {isMyTurn && gameActive && (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-3 py-1 bg-green-100 rounded-full">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-xs font-bold text-green-700">YOUR TURN</span>
+                </div>
+                <div className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all duration-300 ${
+                  timeRemaining <= 10
+                    ? 'bg-red-100 border border-red-300 animate-pulse'
+                    : 'bg-blue-50 border border-blue-200'
+                }`}>
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className={`font-black text-sm ${
+                    timeRemaining <= 10 ? 'text-red-700' : 'text-blue-700'
+                  }`}>
+                    {timeRemaining}s
+                  </span>
+                </div>
               </div>
             )}
           </div>
@@ -83,10 +119,26 @@ export default function GameBoard({
 
           {/* Opponent */}
           <div className={`flex items-center gap-3 flex-1 justify-end transition-all duration-300 ${!isMyTurn ? 'scale-105' : 'opacity-70'}`}>
-            {!isMyTurn && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-amber-100 rounded-full">
-                <span className="text-xs font-bold text-amber-700">THINKING...</span>
-                <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+            {!isMyTurn && gameActive && (
+              <div className="flex items-center gap-2">
+                <div className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all duration-300 ${
+                  timeRemaining <= 10
+                    ? 'bg-red-100 border border-red-300 animate-pulse'
+                    : 'bg-blue-50 border border-blue-200'
+                }`}>
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className={`font-black text-sm ${
+                    timeRemaining <= 10 ? 'text-red-700' : 'text-blue-700'
+                  }`}>
+                    {timeRemaining}s
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1 bg-amber-100 rounded-full">
+                  <span className="text-xs font-bold text-amber-700">THINKING...</span>
+                  <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                </div>
               </div>
             )}
             <div className="flex-1 text-right">

@@ -14,6 +14,7 @@ export interface GameState {
   status: "waiting" | "active" | "completed";
   winner: string | null;
   createdAt: number;
+  turnStartTimestamp: number | null;
 }
 
 // OpCodes for client-server communication (matches server)
