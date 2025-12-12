@@ -159,7 +159,7 @@ export default function Leaderboard({ nakamaService, currentUserId, gameState }:
                         : "bg-gray-200 text-gray-600"
                     }`}
                   >
-                    {entry.rank}
+                    {index + 1}
                   </div>
 
                   {/* Username */}
@@ -174,10 +174,14 @@ export default function Leaderboard({ nakamaService, currentUserId, gameState }:
                     </div>
                   </div>
 
-                  {/* Score */}
+                  {/* Stats */}
                   <div className="text-right">
-                    <div className="font-black text-base sm:text-lg text-gray-800">{entry.score}</div>
-                    <div className="text-[10px] sm:text-xs text-gray-500">wins</div>
+                    <div className="font-black text-sm sm:text-base text-gray-800">
+                      {entry.wins}W - {entry.losses}L
+                    </div>
+                    <div className="text-[10px] sm:text-xs text-gray-500">
+                      {entry.winRate.toFixed(1)}% win rate
+                    </div>
                   </div>
                 </div>
               </div>

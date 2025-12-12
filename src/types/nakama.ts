@@ -4,9 +4,10 @@ import type { GameState } from "./game";
 export type ConnectionStatus = "disconnected" | "connecting" | "connected" | "reconnecting";
 
 export interface LeaderboardEntry {
-  rank: number;
   username: string;
-  score: number;
+  wins: number;
+  losses: number;
+  winRate: number;
   userId: string;
 }
 
