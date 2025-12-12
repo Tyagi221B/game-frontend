@@ -55,7 +55,7 @@ export default function Matchmaking({ username, onFindMatch, onLogout }: Matchma
               onClick={handleFindMatch}
               className="w-full bg-indigo-600 text-white font-bold py-6 px-8 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] hover:bg-indigo-700 active:scale-[0.98] mb-6"
             >
-              <div className="flex items-center justify-center gap-3">
+              <div className="flex items-center justify-center gap-3 text-black py-2 bg-amber-200 rounded-3xl">
                 <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
