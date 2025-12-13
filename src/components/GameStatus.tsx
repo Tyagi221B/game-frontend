@@ -1,5 +1,6 @@
 // components/GameStatus.tsx - Game result display
 
+import { motion, AnimatePresence } from "framer-motion";
 import type { GameState } from "../types/game";
 import Button from "./Button";
 
@@ -14,11 +15,6 @@ export default function GameStatus({
   currentUserId,
   onPlayAgain,
 }: GameStatusProps) {
-  // Only show if game is completed
-  if (gameState.status !== "completed") {
-    return null;
-  }
-
   // Determine result
   const isDraw = gameState.winner === "draw";
   const isWinner = gameState.winner === currentUserId;
@@ -27,8 +23,25 @@ export default function GameStatus({
     : gameState.players[gameState.winner!]?.username;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div className="relative bg-black/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl shadow-orange-500/30 p-6 sm:p-8 md:p-10 w-full max-w-xs sm:max-w-md mx-4 border-2 border-orange-500/30">
+    <AnimatePresence>
+      {gameState.status === "completed" && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            transition={{
+              type: "spring",
+              damping: 20,
+              stiffness: 300
+            }}
+            className="relative bg-black/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl shadow-orange-500/30 p-6 sm:p-8 md:p-10 w-full max-w-xs sm:max-w-md mx-4 border-2 border-orange-500/30"
+          >
         {/* Confetti Effect (for winner) */}
         {isWinner && (
           <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
@@ -126,7 +139,9 @@ export default function GameStatus({
             </span>
           </Button>
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

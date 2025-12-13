@@ -1,6 +1,7 @@
 // components/GameBoard.tsx - 3x3 Tic-Tac-Toe grid
 
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import type { GameState } from "../types/game";
 
 interface GameBoardProps {
@@ -62,10 +63,24 @@ export default function GameBoard({
         `}
       >
         {value === "X" && (
-          <span className="text-red-500 drop-shadow-[0_0_25px_rgba(239,68,68,0.8)]">X</span>
+          <motion.span
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", damping: 15, stiffness: 300 }}
+            className="text-red-500 drop-shadow-[0_0_25px_rgba(239,68,68,0.8)]"
+          >
+            X
+          </motion.span>
         )}
         {value === "O" && (
-          <span className="text-blue-500 drop-shadow-[0_0_10px_rgba(255,138,0,0.4)]">O</span>
+          <motion.span
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", damping: 12, stiffness: 250 }}
+            className="text-blue-500 drop-shadow-[0_0_10px_rgba(255,138,0,0.4)]"
+          >
+            O
+          </motion.span>
         )}
       </button>
     );
@@ -178,14 +193,23 @@ export default function GameBoard({
 
       {/* Turn Indicator */}
       <div className="mt-8 text-center">
-        {gameActive && (
-          <div className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl shadow-lg shadow-orange-500/20 bg-black/60 backdrop-blur-xl border border-orange-500/20">
-            <div className={`w-3 h-3 rounded-full ${isMyTurn ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500 animate-pulse'}`}></div>
-            <span className="text-lg font-bold text-white">
-              {isMyTurn ? `Your Turn - Place your ${mySymbol}` : `Waiting for opponent...`}
-            </span>
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          {gameActive && (
+            <motion.div
+              key={isMyTurn ? "my-turn" : "opponent-turn"}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ type: "spring", damping: 20, stiffness: 300 }}
+              className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl shadow-lg shadow-orange-500/20 bg-black/60 backdrop-blur-xl border border-orange-500/20"
+            >
+              <div className={`w-3 h-3 rounded-full ${isMyTurn ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500 animate-pulse'}`}></div>
+              <span className="text-lg font-bold text-white">
+                {isMyTurn ? `Your Turn - Place your ${mySymbol}` : `Waiting for opponent...`}
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

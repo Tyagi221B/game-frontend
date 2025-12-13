@@ -1,8 +1,12 @@
 // components/Button.tsx - Reusable premium button with animated border
 
+import { motion } from "framer-motion";
 import type { ButtonHTMLAttributes } from "react";
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  "onAnimationStart" | "onDragStart" | "onDragEnd" | "onDrag"
+> {
   variant?: "primary" | "secondary" | "success";
   children: React.ReactNode;
 }
@@ -13,7 +17,7 @@ export default function Button({
   className = "",
   ...props
 }: ButtonProps) {
-  const baseStyles = "w-full font-bold px-6 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] backdrop-blur-sm border-2 btn-glow";
+  const baseStyles = "w-full font-bold px-6 rounded-xl transition-all duration-200 backdrop-blur-sm border-2 btn-glow";
 
   const variantStyles = {
     primary: "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white py-4 shadow-lg shadow-orange-500/50 border-orange-400/50",
@@ -22,11 +26,14 @@ export default function Button({
   };
 
   return (
-    <button
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: "spring", damping: 15, stiffness: 300 }}
       className={`${baseStyles} ${variantStyles[variant]} ${className}`}
       {...props}
     >
       {children}
-    </button>
+    </motion.button>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { motion } from "framer-motion";
 import type { NakamaService, LeaderboardEntry } from "../types/nakama";
 import type { GameState } from "../types/game";
 import type { ConnectionStatus } from "../types/nakama";
@@ -126,7 +127,12 @@ export default function Leaderboard({ nakamaService, currentUserId, gameState, c
     }
 
     return (
-      <div className="bg-black/80 backdrop-blur-xl rounded-xl md:rounded-2xl shadow-xl shadow-amber-500/20 p-3 md:p-6 border border-amber-500/30">
+      <motion.div
+        initial={{ opacity: 0, x: 100 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+        className="bg-black/80 backdrop-blur-xl rounded-xl md:rounded-2xl shadow-xl shadow-amber-500/20 p-3 md:p-6 border border-amber-500/30"
+      >
         <div className="flex items-center justify-between gap-2 md:gap-3 mb-3 md:mb-4">
           <div className="flex items-center gap-2 md:gap-3">
             <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-linear-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/50">
@@ -150,8 +156,16 @@ export default function Leaderboard({ nakamaService, currentUserId, gameState, c
             const isTopThree = index < 3;
 
             return (
-              <div
+              <motion.div
                 key={entry.userId}
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{
+                  type: "spring",
+                  damping: 20,
+                  stiffness: 200,
+                  delay: index * 0.1
+                }}
                 className={`flex items-center justify-between p-2 md:p-3 rounded-lg md:rounded-xl transition-all border ${
                   isCurrentUser
                     ? "bg-orange-500/20 border-orange-500/50"
@@ -192,11 +206,11 @@ export default function Leaderboard({ nakamaService, currentUserId, gameState, c
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
-      </div>
+      </motion.div>
     );
   }
 }

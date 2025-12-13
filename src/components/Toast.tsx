@@ -1,6 +1,7 @@
 // components/Toast.tsx - Toast notification system
 
 import { useEffect } from "react";
+import { motion } from "framer-motion";
 
 export type ToastType = "success" | "error" | "warning" | "info";
 
@@ -83,8 +84,12 @@ export default function Toast({ id, type, message, duration = 5000, onDismiss }:
   const config = getToastConfig();
 
   return (
-    <div
-      className={`${config.bgColor} text-white px-6 py-3 rounded-lg shadow-lg border border-white/10 flex items-center gap-3 min-w-75 max-w-md animate-slide-in`}
+    <motion.div
+      initial={{ opacity: 0, y: -50, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, x: 300, scale: 0.8 }}
+      transition={{ type: "spring", damping: 20, stiffness: 300 }}
+      className={`${config.bgColor} text-white px-6 py-3 rounded-lg shadow-lg border border-white/10 flex items-center gap-3 min-w-75 max-w-md`}
     >
       <div className="shrink-0">{config.icon}</div>
       <span className="flex-1">{message}</span>
@@ -96,6 +101,6 @@ export default function Toast({ id, type, message, duration = 5000, onDismiss }:
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
-    </div>
+    </motion.div>
   );
 }
