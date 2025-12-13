@@ -11,7 +11,12 @@ interface LeaderboardProps {
   connectionStatus: ConnectionStatus;
 }
 
-export default function Leaderboard({ nakamaService, currentUserId, gameState, connectionStatus }: LeaderboardProps) {
+export default function Leaderboard({
+  nakamaService,
+  currentUserId,
+  gameState,
+  connectionStatus,
+}: LeaderboardProps) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -57,7 +62,16 @@ export default function Leaderboard({ nakamaService, currentUserId, gameState, c
         {/* Mobile: Compact toggle button */}
         <button
           onClick={() => setIsExpanded(true)}
-          className="md:hidden bg-black/80 backdrop-blur-sm rounded-full shadow-xl shadow-amber-500/20 p-2 md:p-3 border-2 border-amber-500/50 hover:scale-110 transition-transform"
+          className="
+  fixed top-4 right-4 z-50
+  md:hidden
+  bg-black/80 backdrop-blur-xl
+  rounded-full
+  shadow-xl shadow-amber-500/30
+  p-2
+  border border-amber-500/50
+  hover:scale-110 transition-transform
+"
         >
           <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-linear-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/50">
             <span className="text-white text-base md:text-lg">🏆</span>
@@ -65,9 +79,7 @@ export default function Leaderboard({ nakamaService, currentUserId, gameState, c
         </button>
 
         {/* Desktop: Full leaderboard always visible */}
-        <div className="hidden md:block">
-          {renderLeaderboard()}
-        </div>
+        <div className="hidden md:block">{renderLeaderboard()}</div>
       </>
     );
   }
@@ -84,18 +96,32 @@ export default function Leaderboard({ nakamaService, currentUserId, gameState, c
               <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-linear-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/50">
                 <span className="text-white text-base md:text-lg">🏆</span>
               </div>
-              <h2 className="text-base md:text-xl font-black text-transparent bg-clip-text bg-linear-to-r from-amber-400 to-amber-600">Top Players</h2>
+              <h2 className="text-base md:text-xl font-black text-transparent bg-clip-text bg-linear-to-r from-amber-400 to-amber-600">
+                Top Players
+              </h2>
             </div>
             <button
               onClick={() => setIsExpanded(false)}
               className="md:hidden text-neutral-400 hover:text-neutral-200 transition-colors"
             >
-              <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-4 h-4 md:w-5 md:h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
-          <div className="text-center py-3 md:py-4 text-neutral-400 text-xs md:text-sm">Loading...</div>
+          <div className="text-center py-3 md:py-4 text-neutral-400 text-xs md:text-sm">
+            Loading...
+          </div>
         </div>
       );
     }
@@ -108,14 +134,26 @@ export default function Leaderboard({ nakamaService, currentUserId, gameState, c
               <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-linear-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/50">
                 <span className="text-white text-base md:text-lg">🏆</span>
               </div>
-              <h2 className="text-base md:text-xl font-black text-transparent bg-clip-text bg-linear-to-r from-amber-400 to-amber-600">Top Players</h2>
+              <h2 className="text-base md:text-xl font-black text-transparent bg-clip-text bg-linear-to-r from-amber-400 to-amber-600">
+                Top Players
+              </h2>
             </div>
             <button
               onClick={() => setIsExpanded(false)}
               className="md:hidden text-neutral-400 hover:text-neutral-200 transition-colors"
             >
-              <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-4 h-4 md:w-5 md:h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -138,14 +176,26 @@ export default function Leaderboard({ nakamaService, currentUserId, gameState, c
             <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-linear-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/50">
               <span className="text-white text-base md:text-lg">🏆</span>
             </div>
-            <h2 className="text-base md:text-xl font-black text-transparent bg-clip-text bg-linear-to-r from-amber-400 to-amber-600">Top Players</h2>
+            <h2 className="text-base md:text-xl font-black text-transparent bg-clip-text bg-linear-to-r from-amber-400 to-amber-600">
+              Top Players
+            </h2>
           </div>
           <button
             onClick={() => setIsExpanded(false)}
             className="md:hidden text-neutral-400 hover:text-neutral-200 transition-colors"
           >
-            <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-4 h-4 md:w-5 md:h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -164,7 +214,7 @@ export default function Leaderboard({ nakamaService, currentUserId, gameState, c
                   type: "spring",
                   damping: 20,
                   stiffness: 200,
-                  delay: index * 0.1
+                  delay: index * 0.1,
                 }}
                 className={`flex items-center justify-between p-2 md:p-3 rounded-lg md:rounded-xl transition-all border ${
                   isCurrentUser
@@ -186,7 +236,11 @@ export default function Leaderboard({ nakamaService, currentUserId, gameState, c
 
                   {/* Username */}
                   <div className="flex-1 min-w-0">
-                    <div className={`font-bold text-xs md:text-base truncate capitalize ${isCurrentUser ? "text-orange-400" : "text-white"}`}>
+                    <div
+                      className={`font-bold text-xs md:text-base truncate capitalize ${
+                        isCurrentUser ? "text-orange-400" : "text-white"
+                      }`}
+                    >
                       {entry.username}
                       {isCurrentUser && (
                         <span className="ml-1 md:ml-2 text-[9px] md:text-xs bg-orange-500 text-white px-1 md:px-2 py-0.5 rounded-full">
@@ -198,7 +252,11 @@ export default function Leaderboard({ nakamaService, currentUserId, gameState, c
 
                   {/* Stats */}
                   <div className="text-right">
-                    <div className={`font-black text-xs md:text-base ${isCurrentUser ? "text-orange-400" : "text-white"}`}>
+                    <div
+                      className={`font-black text-xs md:text-base ${
+                        isCurrentUser ? "text-orange-400" : "text-white"
+                      }`}
+                    >
                       {entry.wins}W - {entry.losses}L
                     </div>
                     <div className="text-[9px] md:text-xs text-neutral-400">
