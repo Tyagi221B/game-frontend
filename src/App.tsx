@@ -30,6 +30,9 @@ function App() {
   const [showLeaveMatchModal, setShowLeaveMatchModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
+  // Auto-match state for "Play Again"
+  const [autoMatchMode, setAutoMatchMode] = useState<"classic" | "timed" | null>(null);
+
   // Toast management
   const showToast = useCallback((type: ToastType, message: string, duration = 5000) => {
     const id = Math.random().toString(36).substring(7);
@@ -154,10 +157,26 @@ function App() {
   };
 
   // Step 2: Handle matchmaking
-  const handleFindMatch = async (mode: "classic" | "timed") => {
+  const handleFindMatch = useCallback(async (mode: "classic" | "timed") => {
     // Find/create a match with selected mode
     await nakamaService.findMatch(mode);
-  };
+  }, []);
+
+  // Auto-match when "Play Again" is clicked
+  useEffect(() => {
+    // If we're on matchmaking screen and autoMatchMode is set, trigger auto-match
+    if (currentScreen === "matchmaking" && autoMatchMode) {
+      console.log("🔄 [PLAY AGAIN] Auto-matching in", autoMatchMode, "mode");
+
+      // Small delay to let matchmaking screen mount
+      const timer = setTimeout(() => {
+        handleFindMatch(autoMatchMode);
+        setAutoMatchMode(null); // Clear after triggering
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [currentScreen, autoMatchMode, handleFindMatch]);
 
   // Step 2.5: Handle cancel matchmaking
   const handleCancelMatch = async () => {
@@ -174,9 +193,17 @@ function App() {
 
   // Step 4: Handle play again
   const handlePlayAgain = async () => {
+    // Save current mode before clearing gameState
+    const currentMode = gameState?.mode || "timed";
+
+    console.log("🔄 [PLAY AGAIN] Saving mode:", currentMode);
+
+    // Clear game state and go to matchmaking
     setGameState(null);
     setCurrentScreen("matchmaking");
-    // User will select mode again on matchmaking screen
+
+    // Trigger auto-match in same mode (useEffect will handle the actual match)
+    setAutoMatchMode(currentMode);
   };
 
   // Step 4.5: Handle leave match (forfeit)
