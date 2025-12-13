@@ -24,11 +24,13 @@ export interface NakamaService {
   disconnect(): void;
 
   // Matchmaking
-  findMatch(): Promise<boolean>;
+  findMatch(mode?: string): Promise<boolean>;
+  cancelMatch(): Promise<void>;
   joinMatch(matchId: string): Promise<boolean>;
 
   // Gameplay
   sendMove(position: number): Promise<void>;
+  leaveMatch(): Promise<void>;
 
   // Leaderboard
   getLeaderboard(): Promise<LeaderboardEntry[]>;

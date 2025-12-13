@@ -8,6 +8,7 @@ import GameStatus from "./components/GameStatus";
 import Leaderboard from "./components/Leaderboard";
 import ConnectionStatus from "./components/ConnectionStatus";
 import ToastContainer from "./components/ToastContainer";
+import ConfirmationModal from "./components/ConfirmationModal";
 import { nakamaService } from "./services/nakama";
 import type { GameState } from "./types/game";
 import type { ConnectionStatus as ConnectionStatusType } from "./types/nakama";
@@ -24,6 +25,10 @@ function App() {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatusType>("disconnected");
   const [toasts, setToasts] = useState<Omit<ToastProps, "onDismiss">[]>([]);
+
+  // Modal state
+  const [showLeaveMatchModal, setShowLeaveMatchModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Toast management
   const showToast = useCallback((type: ToastType, message: string, duration = 5000) => {
@@ -102,6 +107,25 @@ function App() {
     };
   }, [showToast]); // Run only once on mount
 
+  // Warn user before refreshing/closing tab during active game
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Only warn if game is actively being played
+      if (gameState?.status === "active") {
+        e.preventDefault();
+        // Modern browsers ignore custom messages, but we still need to set returnValue
+        e.returnValue = "You're in an active game! Leaving will forfeit the match.";
+        return "You're in an active game! Leaving will forfeit the match.";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [gameState?.status]);
+
   // Step 1: Handle login
   const handleLogin = async (nickname: string) => {
     setUsername(nickname);
@@ -130,9 +154,14 @@ function App() {
   };
 
   // Step 2: Handle matchmaking
-  const handleFindMatch = async () => {
-    // Find/create a match
-    await nakamaService.findMatch();
+  const handleFindMatch = async (mode: "classic" | "timed") => {
+    // Find/create a match with selected mode
+    await nakamaService.findMatch(mode);
+  };
+
+  // Step 2.5: Handle cancel matchmaking
+  const handleCancelMatch = async () => {
+    await nakamaService.cancelMatch();
   };
 
   // Step 3: Handle cell click in game
@@ -147,34 +176,39 @@ function App() {
   const handlePlayAgain = async () => {
     setGameState(null);
     setCurrentScreen("matchmaking");
+    // User will select mode again on matchmaking screen
+  };
 
-    // Find new match
-    await handleFindMatch();
+  // Step 4.5: Handle leave match (forfeit)
+  const handleLeaveMatch = () => {
+    setShowLeaveMatchModal(true);
+  };
+
+  const confirmLeaveMatch = async () => {
+    setShowLeaveMatchModal(false);
+    console.log("🚪 [LEAVE] Player forfeiting match...");
+
+    // Leave the match (server will handle forfeit logic)
+    await nakamaService.leaveMatch();
+
+    // Reset to matchmaking screen
+    setGameState(null);
+    setCurrentScreen("matchmaking");
+
+    showToast("info", "You forfeited the match.");
+    console.log("✅ [LEAVE] Returned to matchmaking");
   };
 
   // Step 5: Handle logout
-  const handleLogout = async () => {
+  const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = async () => {
+    setShowLogoutModal(false);
     console.log("========================================");
     console.log("🚪 [LOGOUT] Starting logout process...");
     console.log("🚪 [LOGOUT] Current user:", username, "| User ID:", userId);
-
-    // Show confirmation dialog
-    const confirmed = window.confirm(
-      "Are you sure you want to logout?\n\n" +
-      "⚠️ You will lose:\n" +
-      "• All your scores and progress\n" +
-      "• Your username (it will become available for others)\n" +
-      "• All leaderboard data\n\n" +
-      "This action cannot be undone!"
-    );
-
-    if (!confirmed) {
-      console.log("❌ [LOGOUT] Logout cancelled by user");
-      console.log("========================================");
-      return;
-    }
-
-    console.log("✓ [LOGOUT] User confirmed logout");
 
     // Delete user data from server
     console.log("🗑️ [LOGOUT] Calling server to delete user data...");
@@ -222,6 +256,7 @@ function App() {
         <Matchmaking
           username={username}
           onFindMatch={handleFindMatch}
+          onCancelMatch={handleCancelMatch}
           onLogout={handleLogout}
         />
       )}
@@ -242,6 +277,7 @@ function App() {
               gameState={gameState}
               currentUserId={userId}
               onCellClick={handleCellClick}
+              onLeaveMatch={handleLeaveMatch}
             />
 
             {/* Game Status Modal (only shows when game completed) */}
@@ -265,6 +301,40 @@ function App() {
           />
         </div>
       )}
+
+      {/* Confirmation Modals */}
+      <ConfirmationModal
+        isOpen={showLeaveMatchModal}
+        title="Leave Match?"
+        message="Are you sure you want to leave this game?"
+        warnings={[
+          "You will forfeit the match",
+          "Your opponent will win",
+          "This will count as a loss",
+        ]}
+        confirmText="Leave Match"
+        cancelText="Stay"
+        confirmVariant="danger"
+        onConfirm={confirmLeaveMatch}
+        onCancel={() => setShowLeaveMatchModal(false)}
+      />
+
+      <ConfirmationModal
+        isOpen={showLogoutModal}
+        title="Logout & Delete Data?"
+        message="This will permanently delete all your data."
+        warnings={[
+          "All your scores and progress will be lost",
+          "Your username will become available for others",
+          "All leaderboard data will be deleted",
+          "This action cannot be undone",
+        ]}
+        confirmText="Logout"
+        cancelText="Cancel"
+        confirmVariant="danger"
+        onConfirm={confirmLogout}
+        onCancel={() => setShowLogoutModal(false)}
+      />
     </div>
   );
 }

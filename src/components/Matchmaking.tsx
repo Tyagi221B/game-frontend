@@ -1,20 +1,30 @@
 // components/Matchmaking.tsx - Find match screen
 
 import { useState } from "react";
+import type { GameMode } from "../types/game";
 import Button from "./Button";
 
 interface MatchmakingProps {
   username: string;
-  onFindMatch: () => void;
+  onFindMatch: (mode: GameMode) => void;
+  onCancelMatch: () => void;
   onLogout: () => void;
 }
 
-export default function Matchmaking({ username, onFindMatch, onLogout }: MatchmakingProps) {
+export default function Matchmaking({ username, onFindMatch, onCancelMatch, onLogout }: MatchmakingProps) {
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
 
-  const handleFindMatch = () => {
+  const handleFindMatch = (mode: GameMode) => {
+    setSelectedMode(mode);
     setIsSearching(true);
-    onFindMatch();
+    onFindMatch(mode);
+  };
+
+  const handleCancel = () => {
+    setIsSearching(false);
+    setSelectedMode(null);
+    onCancelMatch();
   };
 
   return (
@@ -48,33 +58,56 @@ export default function Matchmaking({ username, onFindMatch, onLogout }: Matchma
               <h1 className="text-4xl font-black text-transparent bg-clip-text bg-linear-to-r from-orange-400 to-red-500 mb-2">
                 Welcome, <span className="capitalize">{username}</span>!
               </h1>
-              <p className="text-neutral-300 text-lg">Ready to dominate the board?</p>
+              <p className="text-neutral-300 text-lg mb-6">Choose your game mode</p>
             </div>
 
-            {/* Quick Match Button */}
-            <Button onClick={handleFindMatch} variant="primary" className="py-6 mb-6">
-              <div className="flex items-center justify-center gap-3">
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                <span className="text-xl">Quick Match</span>
-              </div>
-            </Button>
+            {/* Mode Selection */}
+            <div className="space-y-4 mb-6">
+              {/* Classic Mode */}
+              <button
+                onClick={() => handleFindMatch("classic")}
+                className="w-full bg-blue-500/20 hover:bg-blue-500/30 border-2 border-blue-500/50 hover:border-blue-400 rounded-2xl p-6 transition-all hover:scale-[1.02] active:scale-[0.98] backdrop-blur-sm group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-xl bg-blue-500/30 flex items-center justify-center group-hover:bg-blue-500/50 transition-colors">
+                    <svg className="w-8 h-8 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 text-left">
+                    <h3 className="text-2xl font-black text-blue-300 mb-1">Classic Mode</h3>
+                    <p className="text-sm text-blue-200/70">No time limit • Relaxed gameplay</p>
+                  </div>
+                  <div className="text-blue-300">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </button>
 
-            {/* Game Info Cards */}
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="bg-orange-500/10 p-4 rounded-2xl text-center border border-orange-500/30 backdrop-blur-sm">
-                <div className="text-3xl font-black text-orange-400 mb-1">2</div>
-                <div className="text-xs font-semibold text-orange-300 uppercase tracking-wide">Players</div>
-              </div>
-              <div className="bg-red-500/10 p-4 rounded-2xl text-center border border-red-500/30 backdrop-blur-sm">
-                <div className="text-3xl font-black text-red-400 mb-1">3×3</div>
-                <div className="text-xs font-semibold text-red-300 uppercase tracking-wide">Grid</div>
-              </div>
-              <div className="bg-amber-500/10 p-4 rounded-2xl text-center border border-amber-500/30 backdrop-blur-sm">
-                <div className="text-3xl font-black text-amber-400 mb-1">∞</div>
-                <div className="text-xs font-semibold text-amber-300 uppercase tracking-wide">Rounds</div>
-              </div>
+              {/* Timed Mode */}
+              <button
+                onClick={() => handleFindMatch("timed")}
+                className="w-full bg-orange-500/20 hover:bg-orange-500/30 border-2 border-orange-500/50 hover:border-orange-400 rounded-2xl p-6 transition-all hover:scale-[1.02] active:scale-[0.98] backdrop-blur-sm group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-xl bg-orange-500/30 flex items-center justify-center group-hover:bg-orange-500/50 transition-colors">
+                    <svg className="w-8 h-8 text-orange-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 text-left">
+                    <h3 className="text-2xl font-black text-orange-300 mb-1">Timed Mode</h3>
+                    <p className="text-sm text-orange-200/70">30 seconds per turn • Fast-paced</p>
+                  </div>
+                  <div className="text-orange-300">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </button>
             </div>
 
             {/* Footer Info */}
@@ -108,8 +141,11 @@ export default function Matchmaking({ username, onFindMatch, onLogout }: Matchma
               <h2 className="text-3xl font-black text-transparent bg-clip-text bg-linear-to-r from-orange-400 to-red-500 mb-3">
                 Finding Opponent
               </h2>
-              <p className="text-neutral-300 text-lg mb-8">
+              <p className="text-neutral-300 text-lg mb-2">
                 Searching for a worthy challenger...
+              </p>
+              <p className="text-sm text-neutral-400 mb-8">
+                Mode: <span className="font-bold text-orange-400 capitalize">{selectedMode}</span>
               </p>
 
               {/* Animated Dots */}
@@ -118,6 +154,11 @@ export default function Matchmaking({ username, onFindMatch, onLogout }: Matchma
                 <div className="w-4 h-4 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                 <div className="w-4 h-4 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               </div>
+
+              {/* Cancel Button */}
+              <Button onClick={handleCancel} variant="secondary" className="mb-6">
+                Cancel Search
+              </Button>
 
               {/* Tip */}
               <div className="bg-orange-500/10 border border-orange-500/30 rounded-2xl p-4 backdrop-blur-sm">

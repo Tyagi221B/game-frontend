@@ -8,22 +8,26 @@ interface GameBoardProps {
   gameState: GameState;
   currentUserId: string;
   onCellClick: (position: number) => void;
+  onLeaveMatch: () => void;
 }
 
 export default function GameBoard({
   gameState,
   currentUserId,
   onCellClick,
+  onLeaveMatch,
 }: GameBoardProps) {
   // Check if it's current player's turn
   const isMyTurn = gameState.currentTurn === currentUserId;
   const gameActive = gameState.status === "active";
 
-  // Turn timer countdown - calculate remaining time
+  // Turn timer countdown - calculate remaining time (only for timed mode)
   const [timeRemaining, setTimeRemaining] = useState<number>(30);
+  const isTimedMode = gameState.mode === "timed";
 
   useEffect(() => {
-    if (!gameActive || !gameState.turnStartTimestamp) {
+    // Only run timer for timed mode
+    if (!isTimedMode || !gameActive || !gameState.turnStartTimestamp) {
       return;
     }
 
@@ -36,7 +40,7 @@ export default function GameBoard({
     }, 100);
 
     return () => clearInterval(interval);
-  }, [gameActive, gameState.turnStartTimestamp]);
+  }, [isTimedMode, gameActive, gameState.turnStartTimestamp]);
 
   // Get current player's symbol and opponent
   const mySymbol = gameState.players[currentUserId]?.symbol;
@@ -89,7 +93,22 @@ export default function GameBoard({
   return (
     <div className="w-full max-w-xs sm:max-w-sm md:max-w-2xl mx-auto">
       {/* Players Info Bar */}
-      <div className="mb-4 md:mb-8 bg-black/60 backdrop-blur-xl rounded-xl md:rounded-2xl shadow-xl shadow-orange-500/20 p-3 md:p-6 border border-orange-500/20">
+      <div className="relative mb-4 md:mb-8 bg-black/60 backdrop-blur-xl rounded-xl md:rounded-2xl shadow-xl shadow-orange-500/20 p-3 md:p-6 border border-orange-500/20">
+        {/* Leave Match Button - Top Right */}
+        {gameActive && (
+          <button
+            onClick={onLeaveMatch}
+            className="absolute top-2 right-2 md:top-3 md:right-3 flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 text-xs md:text-sm font-bold text-neutral-400 hover:text-red-400 transition-all hover:bg-red-500/10 rounded-lg border border-neutral-700 hover:border-red-500/50"
+            title="Forfeit match"
+          >
+            <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span className="hidden md:inline">Leave Match</span>
+            <span className="md:hidden">Leave</span>
+          </button>
+        )}
+
         <div className="flex items-center justify-between gap-2 md:gap-4">
           {/* You */}
           <div className={`flex items-center gap-2 md:gap-3 flex-1 transition-all duration-300 ${isMyTurn ? 'scale-105' : 'opacity-70'}`}>
@@ -107,7 +126,7 @@ export default function GameBoard({
                 )}
               </div>
               <div className="text-sm md:text-xl font-black text-white truncate mb-0.5 md:mb-1 capitalize">{gameState.players[currentUserId]?.username}</div>
-              {isMyTurn && gameActive && (
+              {isMyTurn && gameActive && isTimedMode && (
                 <div className={`inline-flex items-center gap-0.5 md:gap-1 px-1.5 md:px-2 py-0.5 rounded-md transition-all duration-300 ${
                   timeRemaining <= 10
                     ? 'bg-red-500/20 border border-red-500/50 animate-pulse'
@@ -146,7 +165,7 @@ export default function GameBoard({
                 )}
               </div>
               <div className="text-sm md:text-xl font-black text-white truncate mb-0.5 md:mb-1 capitalize">{opponent?.username || "Waiting..."}</div>
-              {!isMyTurn && gameActive && (
+              {!isMyTurn && gameActive && isTimedMode && (
                 <div className={`inline-flex items-center gap-0.5 md:gap-1 px-1.5 md:px-2 py-0.5 rounded-md transition-all duration-300 ${
                   timeRemaining <= 10
                     ? 'bg-red-500/20 border border-red-500/50 animate-pulse'

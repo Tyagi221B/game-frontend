@@ -1,5 +1,8 @@
 // types/game.ts - Type definitions matching server's GameState
 
+// Game mode types
+export type GameMode = "classic" | "timed";
+
 // Matches server's GameState interface EXACTLY
 export interface GameState {
   board: (string | null)[];
@@ -13,6 +16,7 @@ export interface GameState {
   };
   status: "waiting" | "active" | "completed";
   winner: string | null;
+  mode: GameMode;
   createdAt: number;
   turnStartTimestamp: number | null;
 }

@@ -144,17 +144,17 @@ class NakamaService implements INakamaService {
 
   // Step 3: Find a match using RPC
   // WHY: Server handles finding/creating matches to avoid race conditions
-  async findMatch(): Promise<boolean> {
+  async findMatch(mode: string = "timed"): Promise<boolean> {
     if (!this.socket) {
       console.error("[Match] Socket not connected!");
       return false;
     }
 
     try {
-      console.log("[Match] Calling find_match RPC...");
+      console.log("[Match] Calling find_match RPC with mode:", mode);
 
       // Call server RPC to find or create a match
-      const response = await this.socket.rpc("find_match", "");
+      const response = await this.socket.rpc("find_match", JSON.stringify({ mode }));
       const result = JSON.parse(response.payload as string);
       const matchId = result.matchId;
 
@@ -175,6 +175,40 @@ class NakamaService implements INakamaService {
       console.error("[Match] Failed to find/join match:", error);
       this.onError?.("Failed to find match. Please try again.");
       return false;
+    }
+  }
+
+  // Cancel matchmaking (leave current match)
+  async cancelMatch(): Promise<void> {
+    if (!this.socket || !this.matchId) {
+      console.log("[Match] No active match to cancel");
+      return;
+    }
+
+    try {
+      console.log("[Match] Canceling match:", this.matchId);
+      await this.socket.leaveMatch(this.matchId);
+      this.matchId = null;
+      console.log("[Match] Left match successfully");
+    } catch (error) {
+      console.error("[Match] Failed to leave match:", error);
+    }
+  }
+
+  // Leave active match (forfeit)
+  async leaveMatch(): Promise<void> {
+    if (!this.socket || !this.matchId) {
+      console.log("[Match] No active match to leave");
+      return;
+    }
+
+    try {
+      console.log("[Match] Leaving active match (forfeit):", this.matchId);
+      await this.socket.leaveMatch(this.matchId);
+      this.matchId = null;
+      console.log("[Match] Forfeited match successfully");
+    } catch (error) {
+      console.error("[Match] Failed to leave match:", error);
     }
   }
 
