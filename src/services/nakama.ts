@@ -8,9 +8,9 @@ import { OpCode } from "../types/game";
 import type { NakamaService as INakamaService, LeaderboardEntry, ConnectionStatus } from "../types/nakama";
 
 // Nakama connection configuration
-const SERVER_HOST = "localhost"; // Change to production URL when deploying
-const SERVER_PORT = "7350"; // Nakama HTTP + WebSocket port
-const USE_SSL = false; // Set to true in production
+const SERVER_HOST = import.meta.env.VITE_NAKAMA_HOST || "localhost";
+const SERVER_PORT = import.meta.env.VITE_NAKAMA_PORT || "7350";
+const USE_SSL = import.meta.env.VITE_NAKAMA_SSL === "true";
 
 class NakamaService implements INakamaService {
   private client: Client;
