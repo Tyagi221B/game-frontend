@@ -1,6 +1,6 @@
 // components/Button.tsx - Reusable premium button with animated border
 
-import { ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "success";
