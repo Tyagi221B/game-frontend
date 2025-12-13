@@ -28,7 +28,7 @@ export default function GameStatus({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div className="relative bg-black/80 backdrop-blur-xl rounded-3xl shadow-2xl shadow-orange-500/30 p-10 w-full max-w-md mx-4 border-2 border-orange-500/30">
+      <div className="relative bg-black/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl shadow-orange-500/30 p-6 sm:p-8 md:p-10 w-full max-w-xs sm:max-w-md mx-4 border-2 border-orange-500/30">
         {/* Confetti Effect (for winner) */}
         {isWinner && (
           <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
@@ -39,22 +39,22 @@ export default function GameStatus({
         )}
 
         {/* Icon */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-4 sm:mb-6">
           {isDraw ? (
-            <div className="w-24 h-24 mx-auto bg-linear-to-br from-neutral-700 to-neutral-800 rounded-full flex items-center justify-center shadow-lg border-4 border-neutral-600">
-              <svg className="w-12 h-12 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mx-auto bg-linear-to-br from-neutral-700 to-neutral-800 rounded-full flex items-center justify-center shadow-lg border-4 border-neutral-600">
+              <svg className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
             </div>
           ) : isWinner ? (
-            <div className="w-24 h-24 mx-auto bg-linear-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center shadow-lg shadow-amber-500/50 border-4 border-amber-300 animate-bounce-slow">
-              <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mx-auto bg-linear-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center shadow-lg shadow-amber-500/50 border-4 border-amber-300 animate-bounce-slow">
+              <svg className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
               </svg>
             </div>
           ) : (
-            <div className="w-24 h-24 mx-auto bg-linear-to-br from-red-500 to-red-700 rounded-full flex items-center justify-center shadow-lg shadow-red-500/50 border-4 border-red-400">
-              <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mx-auto bg-linear-to-br from-red-500 to-red-700 rounded-full flex items-center justify-center shadow-lg shadow-red-500/50 border-4 border-red-400">
+              <svg className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
@@ -62,27 +62,27 @@ export default function GameStatus({
         </div>
 
         {/* Result Text */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 sm:mb-8">
           {isDraw ? (
             <>
-              <h2 className="text-4xl font-black text-transparent bg-clip-text bg-linear-to-r from-neutral-300 to-neutral-500 mb-3">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-linear-to-r from-neutral-300 to-neutral-500 mb-2 sm:mb-3">
                 It's a Draw!
               </h2>
-              <p className="text-neutral-400 text-lg">Well played by both players!</p>
+              <p className="text-neutral-400 text-sm sm:text-base md:text-lg">Well played by both players!</p>
             </>
           ) : isWinner ? (
             <>
-              <h2 className="text-4xl font-black text-transparent bg-clip-text bg-linear-to-r from-amber-400 to-amber-600 mb-3">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-linear-to-r from-amber-400 to-amber-600 mb-2 sm:mb-3">
                 Victory! 🎉
               </h2>
-              <p className="text-neutral-300 text-lg">Congratulations on your epic win!</p>
+              <p className="text-neutral-300 text-sm sm:text-base md:text-lg">Congratulations on your epic win!</p>
             </>
           ) : (
             <>
-              <h2 className="text-4xl font-black text-transparent bg-clip-text bg-linear-to-r from-red-400 to-red-600 mb-3">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-linear-to-r from-red-400 to-red-600 mb-2 sm:mb-3">
                 Defeat
               </h2>
-              <p className="text-neutral-400 text-lg">
+              <p className="text-neutral-400 text-sm sm:text-base md:text-lg">
                 <span className="font-bold text-white capitalize">{winnerName}</span> won this round!
               </p>
             </>
@@ -90,17 +90,17 @@ export default function GameStatus({
         </div>
 
         {/* Game Stats */}
-        <div className="bg-linear-to-br from-orange-500/10 to-red-500/10 rounded-2xl p-6 mb-6 border border-orange-500/30 backdrop-blur-sm">
-          <div className="grid grid-cols-2 gap-4 text-center">
+        <div className="bg-linear-to-br from-orange-500/10 to-red-500/10 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-6 border border-orange-500/30 backdrop-blur-sm">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 text-center">
             <div>
-              <p className="text-neutral-400 text-sm mb-2 font-semibold uppercase tracking-wide">Your Symbol</p>
-              <div className={`text-4xl font-black ${gameState.players[currentUserId]?.symbol === "X" ? "text-[#E50914] drop-shadow-[0_0_10px_rgba(229,9,20,0.5)]" : "text-[#0080FF] drop-shadow-[0_0_10px_rgba(0,128,255,0.5)]"}`}>
+              <p className="text-neutral-400 text-xs sm:text-sm mb-2 font-semibold uppercase tracking-wide">Your Symbol</p>
+              <div className={`text-3xl sm:text-4xl font-black ${gameState.players[currentUserId]?.symbol === "X" ? "text-[#E50914] drop-shadow-[0_0_10px_rgba(229,9,20,0.5)]" : "text-[#0080FF] drop-shadow-[0_0_10px_rgba(0,128,255,0.5)]"}`}>
                 {gameState.players[currentUserId]?.symbol}
               </div>
             </div>
             <div>
-              <p className="text-neutral-400 text-sm mb-2 font-semibold uppercase tracking-wide">Result</p>
-              <div className={`text-2xl font-black ${isDraw ? "text-neutral-400" : isWinner ? "text-emerald-500" : "text-red-500"}`}>
+              <p className="text-neutral-400 text-xs sm:text-sm mb-2 font-semibold uppercase tracking-wide">Result</p>
+              <div className={`text-xl sm:text-2xl font-black ${isDraw ? "text-neutral-400" : isWinner ? "text-emerald-500" : "text-red-500"}`}>
                 {isDraw ? "Draw" : isWinner ? "Win" : "Loss"}
               </div>
             </div>
@@ -108,7 +108,7 @@ export default function GameStatus({
         </div>
 
         {/* Action Buttons */}
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           <Button onClick={onPlayAgain} variant="success">
             <span className="flex items-center justify-center gap-2">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
