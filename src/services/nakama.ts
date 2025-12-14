@@ -6,6 +6,7 @@ import type { Socket } from "@heroiclabs/nakama-js";
 import type { GameState } from "../types/game";
 import { OpCode } from "../types/game";
 import type { NakamaService as INakamaService, LeaderboardEntry, ConnectionStatus } from "../types/nakama";
+import { logger } from "../utils/logger";
 
 // Nakama connection configuration
 const SERVER_HOST = import.meta.env.VITE_NAKAMA_HOST || "localhost";
@@ -21,6 +22,7 @@ class NakamaService implements INakamaService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 10;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+  private isLoggingOut = false; // Flag to suppress connection errors during logout
 
   // Callback functions for React components to handle events
   public onMatchStateUpdate?: (state: GameState) => void;
@@ -31,7 +33,7 @@ class NakamaService implements INakamaService {
   constructor() {
     // Initialize Nakama client
     this.client = new Client("defaultkey", SERVER_HOST, SERVER_PORT, USE_SSL);
-    console.log("[Nakama] Client initialized");
+    logger.log("[Nakama] Client initialized");
   }
 
   // Step 1: Authenticate with nickname (device authentication)
@@ -47,10 +49,10 @@ class NakamaService implements INakamaService {
       // Store username in localStorage for session persistence
       localStorage.setItem("nakama_username", this.session.username || nickname);
 
-      console.log("[Auth] Authenticated as:", this.session.username);
+      logger.log("[Auth] Authenticated as:", this.session.username);
       return true;
     } catch (error: unknown) {
-      console.error("[Auth] Authentication failed:", error);
+      logger.error("[Auth] Authentication failed:", error);
 
       // Check if it's a 409 Conflict error (username already taken)
       if (error && typeof error === 'object' && 'status' in error && error.status === 409) {
@@ -65,7 +67,7 @@ class NakamaService implements INakamaService {
   // Step 2: Connect WebSocket for real-time communication
   async connectSocket(): Promise<boolean> {
     if (!this.session) {
-      console.error("[Socket] No session found. Authenticate first!");
+      logger.error("[Socket] No session found. Authenticate first!");
       return false;
     }
 
@@ -78,18 +80,24 @@ class NakamaService implements INakamaService {
       // Set up event listeners BEFORE connecting
       this.socket.onmatchdata = this.handleMatchData.bind(this);
       this.socket.ondisconnect = (evt) => {
-        console.log("[Socket] Disconnected from server", evt);
+        logger.log("[Socket] Disconnected from server", evt);
         this.setConnectionStatus("disconnected");
 
-        // Auto-reconnect if we have a session
-        if (this.session && this.reconnectAttempts < this.maxReconnectAttempts) {
+        // Don't show connection errors or reconnect during logout
+        if (this.isLoggingOut) {
+          logger.log("[Socket] Disconnect during logout - suppressing reconnection");
+          return;
+        }
+
+        // Auto-reconnect if we have a session AND reconnection is enabled
+        if (this.session && this.maxReconnectAttempts > 0 && this.reconnectAttempts < this.maxReconnectAttempts) {
           this.attemptReconnect();
         }
       };
 
       // Connect to Nakama server
       await this.socket.connect(this.session, true);
-      console.log("[Socket] WebSocket connected!");
+      logger.log("[Socket] WebSocket connected!");
 
       // Small delay to ensure socket is fully ready for RPC calls
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -99,9 +107,14 @@ class NakamaService implements INakamaService {
 
       return true;
     } catch (error) {
-      console.error("[Socket] Connection failed:", error);
+      logger.error("[Socket] Connection failed:", error);
       this.setConnectionStatus("disconnected");
-      this.onError?.("Failed to connect to server. Please try again.");
+
+      // Don't show connection errors during logout
+      if (!this.isLoggingOut) {
+        this.onError?.("Failed to connect to server. Please try again.");
+      }
+
       return false;
     }
   }
@@ -115,11 +128,11 @@ class NakamaService implements INakamaService {
     this.reconnectAttempts++;
     const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 30000); // Max 30s
 
-    console.log(`[Socket] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+    logger.log(`[Socket] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
     this.setConnectionStatus("reconnecting");
 
     this.reconnectTimeout = setTimeout(async () => {
-      console.log(`[Socket] Attempting reconnect #${this.reconnectAttempts}...`);
+      logger.log(`[Socket] Attempting reconnect #${this.reconnectAttempts}...`);
       const success = await this.connectSocket();
 
       if (!success && this.reconnectAttempts >= this.maxReconnectAttempts) {
@@ -132,7 +145,7 @@ class NakamaService implements INakamaService {
   private setConnectionStatus(status: ConnectionStatus): void {
     if (this.connectionStatus !== status) {
       this.connectionStatus = status;
-      console.log(`[Connection] Status: ${status}`);
+      logger.log(`[Connection] Status: ${status}`);
       this.onConnectionStatusChange?.(status);
     }
   }
@@ -146,33 +159,33 @@ class NakamaService implements INakamaService {
   // WHY: Server handles finding/creating matches to avoid race conditions
   async findMatch(mode: string = "timed"): Promise<boolean> {
     if (!this.socket) {
-      console.error("[Match] Socket not connected!");
+      logger.error("[Match] Socket not connected!");
       return false;
     }
 
     try {
-      console.log("[Match] Calling find_match RPC with mode:", mode);
+      logger.log("[Match] Calling find_match RPC with mode:", mode);
 
       // Call server RPC to find or create a match
       const response = await this.socket.rpc("find_match", JSON.stringify({ mode }));
       const result = JSON.parse(response.payload as string);
       const matchId = result.matchId;
 
-      console.log("[Match] RPC returned match ID:", matchId);
+      logger.log("[Match] RPC returned match ID:", matchId);
 
       // Join the match
       const match = await this.socket.joinMatch(matchId);
 
       if (match) {
         this.matchId = match.match_id;
-        console.log("[Match] Successfully joined match:", this.matchId);
+        logger.log("[Match] Successfully joined match:", this.matchId);
         this.onMatchJoined?.();
         return true;
       }
 
       return false;
     } catch (error) {
-      console.error("[Match] Failed to find/join match:", error);
+      logger.error("[Match] Failed to find/join match:", error);
       this.onError?.("Failed to find match. Please try again.");
       return false;
     }
@@ -181,41 +194,41 @@ class NakamaService implements INakamaService {
   // Cancel matchmaking (leave current match)
   async cancelMatch(): Promise<void> {
     if (!this.socket || !this.matchId) {
-      console.log("[Match] No active match to cancel");
+      logger.log("[Match] No active match to cancel");
       return;
     }
 
     try {
-      console.log("[Match] Canceling match:", this.matchId);
+      logger.log("[Match] Canceling match:", this.matchId);
       await this.socket.leaveMatch(this.matchId);
       this.matchId = null;
-      console.log("[Match] Left match successfully");
+      logger.log("[Match] Left match successfully");
     } catch (error) {
-      console.error("[Match] Failed to leave match:", error);
+      logger.error("[Match] Failed to leave match:", error);
     }
   }
 
   // Leave active match (forfeit)
   async leaveMatch(): Promise<void> {
     if (!this.socket || !this.matchId) {
-      console.log("[Match] No active match to leave");
+      logger.log("[Match] No active match to leave");
       return;
     }
 
     try {
-      console.log("[Match] Leaving active match (forfeit):", this.matchId);
+      logger.log("[Match] Leaving active match (forfeit):", this.matchId);
       await this.socket.leaveMatch(this.matchId);
       this.matchId = null;
-      console.log("[Match] Forfeited match successfully");
+      logger.log("[Match] Forfeited match successfully");
     } catch (error) {
-      console.error("[Match] Failed to leave match:", error);
+      logger.error("[Match] Failed to leave match:", error);
     }
   }
 
   // Alternative: Join existing match by ID
   async joinMatch(matchId: string): Promise<boolean> {
     if (!this.socket) {
-      console.error("[Match] Socket not connected!");
+      logger.error("[Match] Socket not connected!");
       return false;
     }
 
@@ -224,14 +237,14 @@ class NakamaService implements INakamaService {
 
       if (match) {
         this.matchId = match.match_id;
-        console.log("[Match] Joined match:", this.matchId);
+        logger.log("[Match] Joined match:", this.matchId);
         this.onMatchJoined?.();
         return true;
       }
 
       return false;
     } catch (error) {
-      console.error("[Match] Failed to join match:", error);
+      logger.error("[Match] Failed to join match:", error);
       this.onError?.("Failed to join match. Please try again.");
       return false;
     }
@@ -241,7 +254,7 @@ class NakamaService implements INakamaService {
   // WHY: Tell server we clicked a cell
   async sendMove(position: number): Promise<void> {
     if (!this.socket || !this.matchId) {
-      console.error("[Game] Not in a match!");
+      logger.error("[Game] Not in a match!");
       return;
     }
 
@@ -255,9 +268,9 @@ class NakamaService implements INakamaService {
         JSON.stringify(data)
       );
 
-      console.log("[Game] Sent move:", position);
+      logger.log("[Game] Sent move:", position);
     } catch (error) {
-      console.error("[Game] Failed to send move:", error);
+      logger.error("[Game] Failed to send move:", error);
       this.onError?.("Failed to send move. Please try again.");
     }
   }
@@ -265,19 +278,19 @@ class NakamaService implements INakamaService {
   // Fetch leaderboard
   async getLeaderboard(): Promise<LeaderboardEntry[]> {
     if (!this.socket) {
-      console.error("[Leaderboard] Socket not connected!");
+      logger.error("[Leaderboard] Socket not connected!");
       return [];
     }
 
     try {
-      console.log("[Leaderboard] Fetching top players...");
+      logger.log("[Leaderboard] Fetching top players...");
       const response = await this.socket.rpc("get_leaderboard", "");
       const result = JSON.parse(response.payload as string);
 
-      console.log("[Leaderboard] Received:", result.leaderboard?.length || 0, "players");
+      logger.log("[Leaderboard] Received:", result.leaderboard?.length || 0, "players");
       return result.leaderboard || [];
     } catch (error) {
-      console.error("[Leaderboard] Failed to fetch:", error);
+      logger.error("[Leaderboard] Failed to fetch:", error);
       return [];
     }
   }
@@ -298,16 +311,16 @@ class NakamaService implements INakamaService {
           const stateJson = decoder.decode(data);
           const gameState: GameState = JSON.parse(stateJson);
 
-          console.log("[Game] Received state update:", gameState);
+          logger.log("[Game] Received state update:", gameState);
           this.onMatchStateUpdate?.(gameState);
           break;
         }
 
         default:
-          console.warn("[Game] Unknown OpCode:", opCode);
+          logger.warn("[Game] Unknown OpCode:", opCode);
       }
     } catch (error) {
-      console.error("[Game] Error handling match data:", error);
+      logger.error("[Game] Error handling match data:", error);
     }
   }
 
@@ -352,46 +365,129 @@ class NakamaService implements INakamaService {
     }
     this.session = null;
     this.matchId = null;
-    console.log("[Nakama] Disconnected");
+    logger.log("[Nakama] Disconnected");
   }
 
   // Delete user data (leaderboard records)
-  async deleteUserData(): Promise<boolean> {
+  // Returns: { success: boolean, error?: string, timeout?: boolean }
+  async deleteUserData(): Promise<{ success: boolean; error?: string; timeout?: boolean }> {
     if (!this.socket) {
-      console.error("[Delete] Socket not connected!");
-      return false;
+      logger.error("[Delete] Socket not connected!");
+      return { success: false, error: "Socket not connected" };
     }
 
+    // Prevent multiple simultaneous delete calls
+    if (this.isLoggingOut) {
+      logger.warn("[Delete] Delete already in progress");
+      return { success: false, error: "Delete already in progress" };
+    }
+
+    this.isLoggingOut = true; // Set flag to suppress connection errors
+
+    // Disable auto-reconnect to prevent connection errors after account deletion
+    const originalMaxReconnect = this.maxReconnectAttempts;
+    this.maxReconnectAttempts = 0;
+
     try {
-      console.log("[Delete] ----------------------------------------");
-      console.log("[Delete] Sending delete_user_data RPC to server...");
-      console.log("[Delete] User ID:", this.getUserId());
-      console.log("[Delete] Username:", this.getUsername());
+      logger.log("[Delete] ========================================");
+      logger.log("[Delete] Starting user data deletion...");
+      logger.log("[Delete] User ID:", this.getUserId());
+      logger.log("[Delete] Username:", this.getUsername());
 
-      const response = await this.socket.rpc("delete_user_data", "");
-      console.log("[Delete] RPC response received");
+      let socketDisconnected = false;
+      const disconnectHandler = () => {
+        socketDisconnected = true;
+      };
+      const originalDisconnect = this.socket.ondisconnect;
+      this.socket.ondisconnect = disconnectHandler;
 
-      const result = JSON.parse(response.payload as string);
-      console.log("[Delete] Response parsed:", result);
+      try {
+        // Make delete call with 8-second timeout (production-grade timeout)
+        const deletePromise = this.socket.rpc("delete_user_data", "");
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("timeout")), 8000)
+        );
 
-      if (!result.success) {
-        console.error("[Delete] ✗ Server reported failure:", result.error);
-        console.log("[Delete] ----------------------------------------");
-        return false;
+        // RPC response type from Nakama: { payload: string | Uint8Array }
+        type RpcResponse = { payload: string | Uint8Array };
+        const response = await Promise.race([deletePromise, timeoutPromise]) as RpcResponse;
+
+        // Restore disconnect handler
+        this.socket.ondisconnect = originalDisconnect;
+
+        // If we got a response, parse it
+        if (response && response.payload) {
+          const result = JSON.parse(response.payload as string);
+          if (!result.success) {
+            logger.error("[Delete] ✗ Server reported failure:", result.error);
+            this.maxReconnectAttempts = originalMaxReconnect;
+            this.isLoggingOut = false;
+            return { success: false, error: result.error || "Server reported failure" };
+          }
+          logger.log("[Delete] ✓ Server confirmed successful deletion");
+          // Disconnect after successful response
+          this.disconnect();
+          this.maxReconnectAttempts = originalMaxReconnect;
+          this.isLoggingOut = false;
+          logger.log("[Delete] ========================================");
+          return { success: true };
+        }
+
+        // If we got a response but no payload, treat as success (unlikely but handle gracefully)
+        logger.warn("[Delete] ⚠ Response received but no payload");
+        this.disconnect();
+        this.maxReconnectAttempts = originalMaxReconnect;
+        this.isLoggingOut = false;
+        logger.log("[Delete] ========================================");
+        return { success: true };
+      } catch (error: unknown) {
+        // Restore disconnect handler
+        if (this.socket) {
+          this.socket.ondisconnect = originalDisconnect;
+        }
+
+        // Check if socket disconnected (expected behavior when account is deleted)
+        if (socketDisconnected || (error && typeof error === 'object' && 'message' in error &&
+          String(error.message).includes('timeout'))) {
+
+          // If socket disconnected, deletion likely succeeded
+          if (socketDisconnected) {
+            logger.log("[Delete] ✓ Socket disconnected - account deletion completed");
+            this.disconnect();
+            this.maxReconnectAttempts = originalMaxReconnect;
+            this.isLoggingOut = false;
+            logger.log("[Delete] ========================================");
+            return { success: true };
+          }
+
+          // If timeout but socket still connected, might be a real issue
+          logger.warn("[Delete] ⚠ Timeout waiting for response (socket still connected)");
+          this.maxReconnectAttempts = originalMaxReconnect;
+          this.isLoggingOut = false;
+          logger.log("[Delete] ========================================");
+          return { success: false, error: "Request timed out", timeout: true };
+        }
+
+        // Other errors
+        throw error;
       }
-
-      console.log("[Delete] ✓ Server confirmed successful deletion");
-      console.log("[Delete] ----------------------------------------");
-      return true;
     } catch (error: unknown) {
-      console.error("[Delete] ✗ Exception during deletion:", error);
-      console.log("[Delete] ----------------------------------------");
-      return false;
+      logger.error("[Delete] ✗ Exception during deletion:", error);
+      this.maxReconnectAttempts = originalMaxReconnect;
+      this.isLoggingOut = false;
+      logger.log("[Delete] ========================================");
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error occurred"
+      };
     }
   }
 
   // Logout - Clear device ID and full disconnect
   logout(): void {
+    // Reset logout flag
+    this.isLoggingOut = false;
+
     // Disconnect first
     this.disconnect();
 
@@ -399,7 +495,7 @@ class NakamaService implements INakamaService {
     const DEVICE_ID_KEY = "nakama_device_id";
     localStorage.removeItem(DEVICE_ID_KEY);
     localStorage.removeItem("nakama_username");
-    console.log("[Nakama] Logged out - device ID and username cleared");
+    logger.log("[Nakama] Logged out - device ID and username cleared");
   }
 
   // Check if user is already authenticated

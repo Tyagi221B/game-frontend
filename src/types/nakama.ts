@@ -9,6 +9,8 @@ export interface LeaderboardEntry {
   losses: number;
   winRate: number;
   userId: string;
+  winStreak: number;
+  bestWinStreak: number;
 }
 
 export interface NakamaService {

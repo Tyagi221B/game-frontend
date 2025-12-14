@@ -13,6 +13,7 @@ import { nakamaService } from "./services/nakama";
 import type { GameState } from "./types/game";
 import type { ConnectionStatus as ConnectionStatusType } from "./types/nakama";
 import type { ToastProps, ToastType } from "./components/Toast";
+import { logger } from "./utils/logger";
 
 // Screen types
 type Screen = "login" | "matchmaking" | "game";
@@ -23,21 +24,28 @@ function App() {
   const [username, setUsername] = useState("");
   const [userId, setUserId] = useState("");
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatusType>("disconnected");
+  const [connectionStatus, setConnectionStatus] =
+    useState<ConnectionStatusType>("disconnected");
   const [toasts, setToasts] = useState<Omit<ToastProps, "onDismiss">[]>([]);
 
   // Modal state
   const [showLeaveMatchModal, setShowLeaveMatchModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Auto-match state for "Play Again"
-  const [autoMatchMode, setAutoMatchMode] = useState<"classic" | "timed" | null>(null);
+  const [autoMatchMode, setAutoMatchMode] = useState<
+    "classic" | "timed" | null
+  >(null);
 
   // Toast management
-  const showToast = useCallback((type: ToastType, message: string, duration = 5000) => {
-    const id = Math.random().toString(36).substring(7);
-    setToasts((prev) => [...prev, { id, type, message, duration }]);
-  }, []);
+  const showToast = useCallback(
+    (type: ToastType, message: string, duration = 5000) => {
+      const id = Math.random().toString(36).substring(7);
+      setToasts((prev) => [...prev, { id, type, message, duration }]);
+    },
+    []
+  );
 
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
@@ -50,10 +58,15 @@ function App() {
         const storedUsername = nakamaService.getStoredUsername();
 
         if (storedUsername) {
-          console.log("📍 Found existing identity, re-authenticating as:", storedUsername);
+          logger.log(
+            "📍 Found existing identity, re-authenticating as:",
+            storedUsername
+          );
 
           // Re-authenticate with stored credentials
-          const authenticated = await nakamaService.authenticate(storedUsername);
+          const authenticated = await nakamaService.authenticate(
+            storedUsername
+          );
           if (authenticated) {
             const connected = await nakamaService.connectSocket();
             if (connected) {
@@ -62,7 +75,7 @@ function App() {
               if (userId) {
                 setUserId(userId);
                 setCurrentScreen("matchmaking");
-                console.log("✅ Auto-logged in as:", storedUsername);
+                logger.log("✅ Auto-logged in as:", storedUsername);
               }
             }
           }
@@ -77,7 +90,7 @@ function App() {
   useEffect(() => {
     // Handle state updates from server
     nakamaService.onMatchStateUpdate = (state: GameState) => {
-      console.log("📥 Game state updated:", state);
+      logger.log("📥 Game state updated:", state);
       setGameState(state);
 
       // Auto-transition to game screen when match starts
@@ -88,19 +101,19 @@ function App() {
 
     // Handle match joined
     nakamaService.onMatchJoined = () => {
-      console.log("✅ Joined match successfully!");
+      logger.log("✅ Joined match successfully!");
       // Stay on matchmaking screen until opponent joins
     };
 
     // Handle errors
     nakamaService.onError = (errorMessage: string) => {
-      console.error("❌ Error:", errorMessage);
+      logger.error("❌ Error:", errorMessage);
       showToast("error", errorMessage);
     };
 
     // Handle connection status changes
     nakamaService.onConnectionStatusChange = (status: ConnectionStatusType) => {
-      console.log("🔌 Connection status:", status);
+      logger.log("🔌 Connection status:", status);
       setConnectionStatus(status);
     };
 
@@ -117,7 +130,8 @@ function App() {
       if (gameState?.status === "active") {
         e.preventDefault();
         // Modern browsers ignore custom messages, but we still need to set returnValue
-        e.returnValue = "You're in an active game! Leaving will forfeit the match.";
+        e.returnValue =
+          "You're in an active game! Leaving will forfeit the match.";
         return "You're in an active game! Leaving will forfeit the match.";
       }
     };
@@ -166,7 +180,7 @@ function App() {
   useEffect(() => {
     // If we're on matchmaking screen and autoMatchMode is set, trigger auto-match
     if (currentScreen === "matchmaking" && autoMatchMode) {
-      console.log("🔄 [PLAY AGAIN] Auto-matching in", autoMatchMode, "mode");
+      logger.log("🔄 [PLAY AGAIN] Auto-matching in", autoMatchMode, "mode");
 
       // Small delay to let matchmaking screen mount
       const timer = setTimeout(() => {
@@ -196,7 +210,7 @@ function App() {
     // Save current mode before clearing gameState
     const currentMode = gameState?.mode || "timed";
 
-    console.log("🔄 [PLAY AGAIN] Saving mode:", currentMode);
+    logger.log("🔄 [PLAY AGAIN] Saving mode:", currentMode);
 
     // Clear game state and go to matchmaking
     setGameState(null);
@@ -213,7 +227,7 @@ function App() {
 
   const confirmLeaveMatch = async () => {
     setShowLeaveMatchModal(false);
-    console.log("🚪 [LEAVE] Player forfeiting match...");
+    logger.log("🚪 [LEAVE] Player forfeiting match...");
 
     // Leave the match (server will handle forfeit logic)
     await nakamaService.leaveMatch();
@@ -223,7 +237,7 @@ function App() {
     setCurrentScreen("matchmaking");
 
     showToast("info", "You forfeited the match.");
-    console.log("✅ [LEAVE] Returned to matchmaking");
+    logger.log("✅ [LEAVE] Returned to matchmaking");
   };
 
   // Step 5: Handle logout
@@ -233,23 +247,41 @@ function App() {
 
   const confirmLogout = async () => {
     setShowLogoutModal(false);
-    console.log("========================================");
-    console.log("🚪 [LOGOUT] Starting logout process...");
-    console.log("🚪 [LOGOUT] Current user:", username, "| User ID:", userId);
+    setIsLoggingOut(true);
+
+    logger.log("========================================");
+    logger.log("🚪 [LOGOUT] Starting logout process...");
+    logger.log("🚪 [LOGOUT] Current user:", username, "| User ID:", userId);
+
+    // Show loading toast
+    showToast("info", "Deleting account... Please wait.");
 
     // Delete user data from server
-    console.log("🗑️ [LOGOUT] Calling server to delete user data...");
-    const deleted = await nakamaService.deleteUserData();
+    logger.log("🗑️ [LOGOUT] Calling server to delete user data...");
+    const result = await nakamaService.deleteUserData();
 
-    if (!deleted) {
-      console.error("✗ [LOGOUT] Failed to delete user data from server");
-      console.log("========================================");
-      showToast("error", "Failed to delete user data. Please try again.");
+    if (!result.success) {
+      setIsLoggingOut(false);
+      logger.error("✗ [LOGOUT] Failed to delete user data from server");
+      logger.log("========================================");
+
+      // Show retry option for timeout
+      if (result.timeout) {
+        showToast(
+          "error",
+          "Deletion timed out. The account may still be deleting. Please wait a moment and try again."
+        );
+      } else {
+        showToast(
+          "error",
+          result.error || "Failed to delete user data. Please try again."
+        );
+      }
       return;
     }
 
-    console.log("✓ [LOGOUT] User data deleted from server successfully");
-    console.log("🗑️ [LOGOUT] Clearing localStorage...");
+    logger.log("✓ [LOGOUT] User data deleted from server successfully");
+    logger.log("🗑️ [LOGOUT] Clearing localStorage...");
 
     // Clear everything
     nakamaService.logout();
@@ -257,11 +289,12 @@ function App() {
     setUserId("");
     setGameState(null);
     setCurrentScreen("login");
+    setIsLoggingOut(false);
 
-    console.log("✓ [LOGOUT] localStorage cleared");
-    console.log("✓ [LOGOUT] State reset to login screen");
-    console.log("✅ [LOGOUT] Logout completed successfully!");
-    console.log("========================================");
+    logger.log("✓ [LOGOUT] localStorage cleared");
+    logger.log("✓ [LOGOUT] State reset to login screen");
+    logger.log("✅ [LOGOUT] Logout completed successfully!");
+    logger.log("========================================");
 
     showToast("success", "Logged out successfully. All data deleted.");
   };
@@ -269,6 +302,19 @@ function App() {
   // Render current screen
   return (
     <div className="min-h-screen bg-black">
+      {/* Loading Overlay during Logout */}
+      {isLoggingOut && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-[200]">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-white text-lg font-bold">Deleting account...</p>
+            <p className="text-neutral-400 text-sm mt-2">
+              Please wait, this may take a few seconds
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Connection Status Indicator */}
       <ConnectionStatus status={connectionStatus} />
 

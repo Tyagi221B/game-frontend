@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import type { NakamaService, LeaderboardEntry } from "../types/nakama";
 import type { GameState } from "../types/game";
 import type { ConnectionStatus } from "../types/nakama";
+import { logger } from "../utils/logger";
 
 interface LeaderboardProps {
   nakamaService: NakamaService;
@@ -24,16 +25,27 @@ export default function Leaderboard({
   const fetchLeaderboard = useCallback(async () => {
     // Only fetch if connected
     if (connectionStatus !== "connected") {
-      console.log("[Leaderboard] Skipping fetch - not connected yet");
+      logger.log("[Leaderboard] Skipping fetch - not connected yet");
       return;
     }
 
     try {
       setLoading(true);
       const result = await nakamaService.getLeaderboard();
+      logger.log("[Leaderboard] Fetched data:", result);
+      logger.log(
+        "[Leaderboard] First entry with streaks:",
+        result[0]
+          ? {
+              username: result[0].username,
+              winStreak: result[0].winStreak,
+              bestWinStreak: result[0].bestWinStreak,
+            }
+          : "No entries"
+      );
       setLeaderboard(result);
     } catch (error) {
-      console.error("[Leaderboard] Failed to fetch:", error);
+      logger.error("[Leaderboard] Failed to fetch:", error);
       setLeaderboard([]);
     } finally {
       setLoading(false);
@@ -47,7 +59,7 @@ export default function Leaderboard({
   // Refresh leaderboard when game ends
   useEffect(() => {
     if (gameState?.status === "completed") {
-      console.log("[Leaderboard] Game completed, refreshing...");
+      logger.log("[Leaderboard] Game completed, refreshing...");
       setTimeout(() => fetchLeaderboard(), 1000); // Small delay to let server update
     }
   }, [gameState?.status, fetchLeaderboard]);
@@ -262,6 +274,27 @@ export default function Leaderboard({
                     <div className="text-[9px] md:text-xs text-neutral-400">
                       {entry.winRate.toFixed(1)}% win rate
                     </div>
+                    {/* Win Streak */}
+                    {((entry.winStreak ?? 0) > 0 ||
+                      (entry.bestWinStreak ?? 0) > 0) && (
+                      <div className="flex items-center justify-end gap-1 mt-1">
+                        {(entry.winStreak ?? 0) > 0 && (
+                          <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-orange-500/20 border border-orange-500/50">
+                            <span className="text-[9px] md:text-xs">🔥</span>
+                            <span className="text-[9px] md:text-xs font-bold text-orange-400">
+                              {entry.winStreak ?? 0}
+                            </span>
+                          </div>
+                        )}
+                        {(entry.bestWinStreak ?? 0) > 0 &&
+                          (entry.bestWinStreak ?? 0) !==
+                            (entry.winStreak ?? 0) && (
+                            <div className="text-[8px] md:text-[10px] text-neutral-500">
+                              (Best: {entry.bestWinStreak ?? 0})
+                            </div>
+                          )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.div>
