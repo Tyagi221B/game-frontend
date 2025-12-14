@@ -27,6 +27,7 @@ function App() {
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatusType>("disconnected");
   const [toasts, setToasts] = useState<Omit<ToastProps, "onDismiss">[]>([]);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true); // Loading state during auth check
 
   // Modal state
   const [showLeaveMatchModal, setShowLeaveMatchModal] = useState(false);
@@ -54,6 +55,8 @@ function App() {
   // Check for existing authentication on mount
   useEffect(() => {
     const checkExistingAuth = async () => {
+      setIsCheckingAuth(true);
+
       if (nakamaService.hasStoredIdentity()) {
         const storedUsername = nakamaService.getStoredUsername();
 
@@ -81,6 +84,8 @@ function App() {
           }
         }
       }
+
+      setIsCheckingAuth(false);
     };
 
     checkExistingAuth();
@@ -220,6 +225,13 @@ function App() {
     setAutoMatchMode(currentMode);
   };
 
+  // Handle back to home (go to matchmaking without reloading)
+  const handleBackToHome = () => {
+    logger.log("[BACK TO HOME] Returning to matchmaking");
+    setGameState(null);
+    setCurrentScreen("matchmaking");
+  };
+
   // Step 4.5: Handle leave match (forfeit)
   const handleLeaveMatch = () => {
     setShowLeaveMatchModal(true);
@@ -304,7 +316,7 @@ function App() {
     <div className="min-h-screen bg-black">
       {/* Loading Overlay during Logout */}
       {isLoggingOut && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-[200]">
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-200">
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-white text-lg font-bold">Deleting account...</p>
@@ -321,8 +333,20 @@ function App() {
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
-      {/* Login Screen */}
-      {currentScreen === "login" && <Login onLogin={handleLogin} />}
+      {/* Login Screen - Only show if not checking auth */}
+      {currentScreen === "login" && !isCheckingAuth && (
+        <Login onLogin={handleLogin} />
+      )}
+
+      {/* Loading state during auth check */}
+      {currentScreen === "login" && isCheckingAuth && (
+        <div className="min-h-screen flex items-center justify-center bg-black">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-white text-lg font-bold">Loading...</p>
+          </div>
+        </div>
+      )}
 
       {/* Matchmaking Screen */}
       {currentScreen === "matchmaking" && (
@@ -358,6 +382,7 @@ function App() {
               gameState={gameState}
               currentUserId={userId}
               onPlayAgain={handlePlayAgain}
+              onBackToHome={handleBackToHome}
             />
           </div>
         </div>

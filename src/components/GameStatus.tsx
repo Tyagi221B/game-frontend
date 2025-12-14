@@ -11,12 +11,14 @@ interface GameStatusProps {
   gameState: GameState;
   currentUserId: string;
   onPlayAgain: () => void;
+  onBackToHome?: () => void;
 }
 
 export default function GameStatus({
   gameState,
   currentUserId,
   onPlayAgain,
+  onBackToHome,
 }: GameStatusProps) {
   const [streakData, setStreakData] = useState<{
     winStreak: number;
@@ -283,7 +285,7 @@ export default function GameStatus({
                 </span>
               </Button>
               <Button
-                onClick={() => window.location.reload()}
+                onClick={onBackToHome || (() => window.location.reload())}
                 variant="secondary"
               >
                 <span className="flex items-center justify-center gap-2">
