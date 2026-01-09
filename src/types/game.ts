@@ -25,6 +25,11 @@ export interface GameState {
 export const OpCode = {
   STATE_UPDATE: 1,
   MAKE_MOVE: 2,
+
+  // WebRTC Voice Chat Signaling
+  WEBRTC_OFFER: 3,
+  WEBRTC_ANSWER: 4,
+  WEBRTC_ICE_CANDIDATE: 5,
 } as const;
 
 // Frontend-specific helper types

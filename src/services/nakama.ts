@@ -30,6 +30,11 @@ class NakamaService implements INakamaService {
   public onError?: (message: string) => void;
   public onConnectionStatusChange?: (status: ConnectionStatus) => void;
 
+  // WebRTC voice chat callbacks
+  public onWebRTCOffer?: (data: any) => void;
+  public onWebRTCAnswer?: (data: any) => void;
+  public onWebRTCIceCandidate?: (data: any) => void;
+
   constructor() {
     // Initialize Nakama client
     this.client = new Client("defaultkey", SERVER_HOST, SERVER_PORT, USE_SSL);
@@ -275,6 +280,63 @@ class NakamaService implements INakamaService {
     }
   }
 
+  // Send WebRTC Offer
+  async sendWebRTCOffer(offer: any): Promise<void> {
+    if (!this.socket || !this.matchId) {
+      logger.error("[Voice] Not in a match!");
+      return;
+    }
+
+    try {
+      await this.socket.sendMatchState(
+        this.matchId,
+        OpCode.WEBRTC_OFFER,
+        JSON.stringify(offer)
+      );
+      logger.log("[Voice] Sent WebRTC offer");
+    } catch (error) {
+      logger.error("[Voice] Failed to send offer:", error);
+    }
+  }
+
+  // Send WebRTC Answer
+  async sendWebRTCAnswer(answer: any): Promise<void> {
+    if (!this.socket || !this.matchId) {
+      logger.error("[Voice] Not in a match!");
+      return;
+    }
+
+    try {
+      await this.socket.sendMatchState(
+        this.matchId,
+        OpCode.WEBRTC_ANSWER,
+        JSON.stringify(answer)
+      );
+      logger.log("[Voice] Sent WebRTC answer");
+    } catch (error) {
+      logger.error("[Voice] Failed to send answer:", error);
+    }
+  }
+
+  // Send WebRTC ICE Candidate
+  async sendWebRTCIceCandidate(candidate: any): Promise<void> {
+    if (!this.socket || !this.matchId) {
+      logger.error("[Voice] Not in a match!");
+      return;
+    }
+
+    try {
+      await this.socket.sendMatchState(
+        this.matchId,
+        OpCode.WEBRTC_ICE_CANDIDATE,
+        JSON.stringify(candidate)
+      );
+      logger.log("[Voice] Sent ICE candidate");
+    } catch (error) {
+      logger.error("[Voice] Failed to send ICE candidate:", error);
+    }
+  }
+
   // Fetch leaderboard
   async getLeaderboard(): Promise<LeaderboardEntry[]> {
     if (!this.socket) {
@@ -302,17 +364,65 @@ class NakamaService implements INakamaService {
       // Parse incoming message
       const opCode = matchData.op_code;
       const data = matchData.data;
+      const decoder = new TextDecoder();
 
       // Decode data based on OpCode
       switch (opCode) {
         case OpCode.STATE_UPDATE: {
           // Server sent updated game state
-          const decoder = new TextDecoder();
           const stateJson = decoder.decode(data);
           const gameState: GameState = JSON.parse(stateJson);
 
           logger.log("[Game] Received state update:", gameState);
           this.onMatchStateUpdate?.(gameState);
+          break;
+        }
+
+        case OpCode.WEBRTC_OFFER: {
+          // Received WebRTC offer from peer
+          const offerJson = decoder.decode(data);
+          const offerData = JSON.parse(offerJson);
+
+          // Ignore if this is our own message (shouldn't happen but defensive check)
+          if (offerData.senderId === this.getUserId()) {
+            logger.log("[Voice] Ignoring own offer message");
+            break;
+          }
+
+          logger.log("[Voice] Received WebRTC offer from opponent");
+          this.onWebRTCOffer?.(offerData);
+          break;
+        }
+
+        case OpCode.WEBRTC_ANSWER: {
+          // Received WebRTC answer from peer
+          const answerJson = decoder.decode(data);
+          const answerData = JSON.parse(answerJson);
+
+          // Ignore if this is our own message
+          if (answerData.senderId === this.getUserId()) {
+            logger.log("[Voice] Ignoring own answer message");
+            break;
+          }
+
+          logger.log("[Voice] Received WebRTC answer from opponent");
+          this.onWebRTCAnswer?.(answerData);
+          break;
+        }
+
+        case OpCode.WEBRTC_ICE_CANDIDATE: {
+          // Received ICE candidate from peer
+          const candidateJson = decoder.decode(data);
+          const candidateData = JSON.parse(candidateJson);
+
+          // Ignore if this is our own message
+          if (candidateData.senderId === this.getUserId()) {
+            logger.log("[Voice] Ignoring own ICE candidate");
+            break;
+          }
+
+          logger.log("[Voice] Received ICE candidate from opponent");
+          this.onWebRTCIceCandidate?.(candidateData);
           break;
         }
 
