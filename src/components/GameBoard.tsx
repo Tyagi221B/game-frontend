@@ -9,6 +9,11 @@ interface GameBoardProps {
   currentUserId: string;
   onCellClick: (position: number) => void;
   onLeaveMatch: () => void;
+  isMuted?: boolean;
+  onToggleMute?: () => void;
+  isVoiceConnected?: boolean;
+  isLocalSpeaking?: boolean;
+  isRemoteSpeaking?: boolean;
 }
 
 export default function GameBoard({
@@ -16,6 +21,11 @@ export default function GameBoard({
   currentUserId,
   onCellClick,
   onLeaveMatch,
+  isMuted = false,
+  onToggleMute,
+  isVoiceConnected = false,
+  isLocalSpeaking = false,
+  isRemoteSpeaking = false,
 }: GameBoardProps) {
   // Check if it's current player's turn
   const isMyTurn = gameState.currentTurn === currentUserId;
@@ -100,29 +110,92 @@ export default function GameBoard({
     <div className="w-full max-w-xs sm:max-w-sm md:max-w-2xl mx-auto">
       {/* Players Info Bar */}
       <div className="relative mb-4 md:mb-8 bg-black/60 backdrop-blur-xl rounded-xl md:rounded-2xl shadow-xl shadow-orange-500/20 p-3 md:p-6 border border-orange-500/20">
-        {/* Leave Match Button - Top Right */}
+        {/* Voice Chat Controls & Leave Match - Top Right */}
         {gameActive && (
-          <button
-            onClick={onLeaveMatch}
-            className="absolute -top-14 right-2 md:-top-8 md:right-3 flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 text-xs md:text-sm font-bold text-white hover:text-red-400 transition-all hover:bg-red-500/10 rounded-lg border border-neutral-700 hover:border-red-500/50"
-            title="Forfeit match"
-          >
-            <svg
-              className="w-3 h-3 md:w-4 md:h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="absolute -top-14 right-2 md:-top-8 md:right-3 flex items-center gap-2">
+            {/* Mute/Unmute Button - Shows CURRENT STATE */}
+            {onToggleMute && (
+              <button
+                onClick={onToggleMute}
+                className={`flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 text-xs md:text-sm font-bold transition-all rounded-lg border ${
+                  isMuted
+                    ? "text-red-400 hover:text-red-300 bg-red-500/10 border-red-500/50 hover:border-red-400"
+                    : isVoiceConnected
+                    ? "text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 border-emerald-500/50 hover:border-emerald-400"
+                    : "text-neutral-400 hover:text-neutral-300 bg-neutral-500/10 border-neutral-700 hover:border-neutral-600"
+                }`}
+                title={isMuted ? "Click to unmute" : "Click to mute"}
+              >
+                {isMuted ? (
+                  <>
+                    <svg
+                      className="w-3 h-3 md:w-4 md:h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
+                      />
+                    </svg>
+                    <span className="hidden md:inline">Muted</span>
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="w-3 h-3 md:w-4 md:h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                      />
+                    </svg>
+                    <span className="hidden md:inline">Active</span>
+                    {isVoiceConnected && (
+                      <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></div>
+                    )}
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* Leave Match Button */}
+            <button
+              onClick={onLeaveMatch}
+              className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 text-xs md:text-sm font-bold text-white hover:text-red-400 transition-all hover:bg-red-500/10 rounded-lg border border-neutral-700 hover:border-red-500/50"
+              title="Forfeit match"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              />
-            </svg>
-            <span className="hidden md:inline">Leave Match</span>
-            <span className="md:hidden">Leave</span>
-          </button>
+              <svg
+                className="w-3 h-3 md:w-4 md:h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
+              </svg>
+              <span className="hidden md:inline">Leave Match</span>
+              <span className="md:hidden">Leave</span>
+            </button>
+          </div>
         )}
 
         <div className="flex items-center justify-between gap-2 md:gap-4">
@@ -151,6 +224,27 @@ export default function GameBoard({
                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
                     <span className="text-[10px] font-bold text-emerald-400">
                       YOUR TURN
+                    </span>
+                  </div>
+                )}
+                {/* Speaking Indicator - Local Player */}
+                {isVoiceConnected && isLocalSpeaking && !isMuted && (
+                  <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-500/20 rounded-full border border-blue-500/50">
+                    <svg
+                      className="w-3 h-3 text-blue-400 animate-pulse"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                      />
+                    </svg>
+                    <span className="text-[9px] font-bold text-blue-400">
+                      SPEAKING
                     </span>
                   </div>
                 )}
@@ -208,9 +302,27 @@ export default function GameBoard({
           >
             <div className="flex-1 text-right min-w-0">
               <div className="flex items-center justify-end gap-1 md:gap-2 mb-0.5 md:mb-1">
-                <div className="text-[10px] md:text-sm font-semibold text-neutral-400 uppercase tracking-wide">
-                  Opponent
-                </div>
+                {/* Speaking Indicator - Remote Player */}
+                {isVoiceConnected && isRemoteSpeaking && (
+                  <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-purple-500/20 rounded-full border border-purple-500/50">
+                    <span className="text-[9px] font-bold text-purple-400">
+                      SPEAKING
+                    </span>
+                    <svg
+                      className="w-3 h-3 text-purple-400 animate-pulse"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                      />
+                    </svg>
+                  </div>
+                )}
                 {!isMyTurn && gameActive && (
                   <div className="hidden md:flex items-center gap-1 px-2 py-0.5 bg-amber-500/20 rounded-full border border-amber-500/50">
                     <span className="text-[10px] font-bold text-amber-400">
@@ -219,6 +331,9 @@ export default function GameBoard({
                     <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></div>
                   </div>
                 )}
+                <div className="text-[10px] md:text-sm font-semibold text-neutral-400 uppercase tracking-wide">
+                  Opponent
+                </div>
               </div>
               <div className="text-sm md:text-xl font-black text-white truncate mb-0.5 md:mb-1 capitalize">
                 {opponent?.username || "Waiting..."}

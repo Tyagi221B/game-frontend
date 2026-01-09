@@ -10,6 +10,7 @@ import ConnectionStatus from "./components/ConnectionStatus";
 import ToastContainer from "./components/ToastContainer";
 import ConfirmationModal from "./components/ConfirmationModal";
 import { nakamaService } from "./services/nakama";
+import { voiceChatService } from "./services/voiceChat";
 import type { GameState } from "./types/game";
 import type { ConnectionStatus as ConnectionStatusType } from "./types/nakama";
 import type { ToastProps, ToastType } from "./components/Toast";
@@ -38,6 +39,12 @@ function App() {
   const [autoMatchMode, setAutoMatchMode] = useState<
     "classic" | "timed" | null
   >(null);
+
+  // Voice chat state
+  const [isMuted, setIsMuted] = useState(false);
+  const [isVoiceConnected, setIsVoiceConnected] = useState(false);
+  const [isLocalSpeaking, setIsLocalSpeaking] = useState(false);
+  const [isRemoteSpeaking, setIsRemoteSpeaking] = useState(false);
 
   // Toast management
   const showToast = useCallback(
@@ -122,11 +129,111 @@ function App() {
       setConnectionStatus(status);
     };
 
+    // WebRTC Voice Chat Signaling Handlers
+    nakamaService.onWebRTCOffer = async (data) => {
+      logger.log("[App] Received WebRTC offer");
+      await voiceChatService.handleOffer(data);
+    };
+
+    nakamaService.onWebRTCAnswer = async (data) => {
+      logger.log("[App] Received WebRTC answer");
+      await voiceChatService.handleAnswer(data);
+    };
+
+    nakamaService.onWebRTCIceCandidate = async (data) => {
+      logger.log("[App] Received ICE candidate");
+      await voiceChatService.handleIceCandidate(data);
+    };
+
     // Cleanup only on component unmount
     return () => {
       nakamaService.disconnect();
+      voiceChatService.cleanup();
     };
   }, [showToast]); // Run only once on mount
+
+  // Voice Chat Lifecycle - Initialize when match becomes active
+  useEffect(() => {
+    const initVoiceChat = async () => {
+      if (!gameState || gameState.status !== "active" || !userId) {
+        return;
+      }
+
+      logger.log("[App] Match is active, initializing voice chat...");
+
+      // Determine if this user is the initiator (player X initiates WebRTC)
+      const myPlayer = gameState.players[userId];
+      const isInitiator = myPlayer?.symbol === "X";
+
+      logger.log(
+        `[App] I am player ${myPlayer?.symbol}, initiator: ${isInitiator}`
+      );
+
+      // Set up signaling callback to send WebRTC messages through Nakama
+      const sendSignal = async (
+        type: "offer" | "answer" | "ice",
+        data: any
+      ) => {
+        switch (type) {
+          case "offer":
+            await nakamaService.sendWebRTCOffer(data);
+            break;
+          case "answer":
+            await nakamaService.sendWebRTCAnswer(data);
+            break;
+          case "ice":
+            await nakamaService.sendWebRTCIceCandidate(data);
+            break;
+        }
+      };
+
+      // Set up voice activity callback
+      voiceChatService.setVoiceActivityCallback((isSpeaking, isLocal) => {
+        if (isLocal) {
+          setIsLocalSpeaking(isSpeaking);
+        } else {
+          setIsRemoteSpeaking(isSpeaking);
+        }
+      });
+
+      // Initialize voice chat
+      const success = await voiceChatService.init(
+        userId,
+        isInitiator,
+        sendSignal
+      );
+
+      if (success) {
+        logger.log("[App] ✓ Voice chat initialized");
+        setIsVoiceConnected(true);
+        showToast("success", "Voice chat connected!", 3000);
+      } else {
+        logger.error("[App] ✗ Voice chat initialization failed");
+        showToast(
+          "warning",
+          "Voice chat unavailable. Check microphone permissions.",
+          5000
+        );
+      }
+    };
+
+    // Only initialize once when match becomes active
+    if (gameState?.status === "active") {
+      initVoiceChat();
+    }
+
+    // Cleanup when match ends or component unmounts
+    return () => {
+      if (gameState?.status === "completed" || !gameState) {
+        logger.log("[App] Cleaning up voice chat...");
+        voiceChatService.cleanup();
+        setIsVoiceConnected(false);
+        setIsMuted(false);
+        setIsLocalSpeaking(false);
+        setIsRemoteSpeaking(false);
+      }
+    };
+  }, [gameState?.status, userId, showToast]);
 
   // Warn user before refreshing/closing tab during active game
   useEffect(() => {
@@ -235,6 +342,13 @@ function App() {
   // Step 4.5: Handle leave match (forfeit)
   const handleLeaveMatch = () => {
     setShowLeaveMatchModal(true);
+  };
+
+  // Handle voice chat mute toggle
+  const handleToggleMute = () => {
+    const newMuteState = voiceChatService.toggleMute();
+    setIsMuted(newMuteState);
+    logger.log(`[App] Microphone ${newMuteState ? "muted" : "unmuted"}`);
   };
 
   const confirmLeaveMatch = async () => {
@@ -375,6 +489,11 @@ function App() {
               currentUserId={userId}
               onCellClick={handleCellClick}
               onLeaveMatch={handleLeaveMatch}
+              isMuted={isMuted}
+              onToggleMute={handleToggleMute}
+              isVoiceConnected={isVoiceConnected}
+              isLocalSpeaking={isLocalSpeaking}
+              isRemoteSpeaking={isRemoteSpeaking}
             />
 
             {/* Game Status Modal (only shows when game completed) */}
